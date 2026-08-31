@@ -127,6 +127,8 @@ def route_validation(state: ARBState) -> Literal["revision_loop", "finalize_appr
     elif verdict == "rejected":
         return "finalize_rejected"
     elif verdict == "revision_requested":
+        if state.get("iteration_count", 0) > 1:
+            return "wait_for_human"
         return "revision_loop"
     
     return "wait_for_human"

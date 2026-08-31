@@ -9,6 +9,8 @@ from backend.core.security import decrypt_secret
 from backend.db.database import SessionLocal
 from backend.db.models import ProviderConfig
 
+from langchain_core.outputs import ChatResult, ChatGeneration
+
 logger = logging.getLogger("arb.llm_router")
 
 class MockFallbackLLM(BaseChatModel):
@@ -20,12 +22,15 @@ class MockFallbackLLM(BaseChatModel):
     def _llm_type(self) -> str:
         return f"mock-{self.provider_name}"
 
-    def _generate(self, messages: list[BaseMessage], stop: Optional[list[str]] = None, **kwargs: Any):
-        prompt_text = " ".join([m.content for m in messages if isinstance(m.content, str)])
-        
-        # Smart synthesis generator for demo/test runs
+    def _generate(self, messages: list[BaseMessage], stop: Optional[list[str]] = None, *args: Any, **kwargs: Any) -> ChatResult:
+        prompt_text = " ".join([m.content if isinstance(m.content, str) else str(m.content) for m in messages])
         response_text = self._synthesize_analysis(prompt_text)
-        return {"generations": [{"text": response_text, "message": AIMessage(content=response_text)}]}
+        message = AIMessage(content=response_text)
+        generation = ChatGeneration(message=message)
+        return ChatResult(generations=[generation])
+
+    async def _agenerate(self, messages: list[BaseMessage], stop: Optional[list[str]] = None, *args: Any, **kwargs: Any) -> ChatResult:
+        return self._generate(messages, stop, *args, **kwargs)
 
     def _synthesize_analysis(self, prompt: str) -> str:
         if "Lead Architect" in prompt:

@@ -104,6 +104,9 @@ class VectorMemoryService:
             "content": text_content
         }
 
+        # Always maintain in-memory docs for resilient fallback & standalone test execution
+        self._in_memory_docs.append({"vector": vector, "payload": payload})
+
         if self._qdrant_client:
             try:
                 from qdrant_client.http import models as qmodels
@@ -119,12 +122,9 @@ class VectorMemoryService:
                     ]
                 )
                 logger.info(f"Feedback {feedback_id} successfully indexed into Qdrant.")
-                return True
             except Exception as e:
-                logger.error(f"Error upserting to Qdrant: {e}")
+                logger.warning(f"Error upserting to Qdrant: {e}")
 
-        # Fallback in-memory indexing
-        self._in_memory_docs.append({"vector": vector, "payload": payload})
         return True
 
     def search_relevant_feedback(self, query_text: str, limit: int = 3) -> List[Dict[str, Any]]:
@@ -134,19 +134,35 @@ class VectorMemoryService:
 
         if self._qdrant_client:
             try:
-                hits = self._qdrant_client.search(
-                    collection_name=self.collection_name,
-                    query_vector=vector,
-                    limit=limit
-                )
-                for hit in hits:
-                    results.append({
-                        "score": hit.score,
-                        "payload": hit.payload
-                    })
-                return results
+                if hasattr(self._qdrant_client, "query_points"):
+                    res = self._qdrant_client.query_points(
+                        collection_name=self.collection_name,
+                        query=vector,
+                        limit=limit
+                    )
+                    points = getattr(res, "points", res)
+                    for p in points:
+                        results.append({
+                            "score": getattr(p, "score", 1.0),
+                            "payload": getattr(p, "payload", {})
+                        })
+                    if results:
+                        return results
+                elif hasattr(self._qdrant_client, "search"):
+                    hits = self._qdrant_client.search(
+                        collection_name=self.collection_name,
+                        query_vector=vector,
+                        limit=limit
+                    )
+                    for hit in hits:
+                        results.append({
+                            "score": hit.score,
+                            "payload": hit.payload
+                        })
+                    if results:
+                        return results
             except Exception as e:
-                logger.warning(f"Qdrant search error: {e}")
+                logger.warning(f"Qdrant query fallback: {e}")
 
         # In-memory cosine similarity fallback
         scored = []

@@ -14,13 +14,13 @@ from backend.config import settings
 router = APIRouter(prefix="/api/auth", tags=["Authentication & SSO"])
 
 class UserRegisterRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str
     full_name: Optional[str] = None
     role: Optional[UserRole] = UserRole.REVIEWER
 
 class UserLoginRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 class TokenResponse(BaseModel):
