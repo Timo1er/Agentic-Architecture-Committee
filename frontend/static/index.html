@@ -83,15 +83,27 @@
             <!-- Modal 1: Architecture Diagram -->
             <div class="form-group">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-                <label for="diagram-input">1. Architecture Diagram (Mermaid / Draw.io XML)</label>
-                <select id="diagram-format-select" style="width: auto; padding: 0.2rem 0.5rem; font-size: 0.8rem;">
+                <label for="diagram-input">1. Architecture Diagram (Mermaid / Draw.io / Image / PDF)</label>
+                <select id="diagram-format-select" style="width: auto; padding: 0.2rem 0.5rem; font-size: 0.8rem;" onchange="ReviewModule.onDiagramFormatChange()">
                   <option value="mermaid">Mermaid.js</option>
                   <option value="drawio">Draw.io XML</option>
+                  <option value="image">Image (PNG, JPEG, WebP)</option>
+                  <option value="pdf">PDF Document (.pdf)</option>
                 </select>
               </div>
-              <textarea id="diagram-input" rows="8" placeholder="graph TD&#10;  Client[Web / Mobile Client] -->|HTTPS / TLS 1.3| ALB[Application Load Balancer]&#10;  ALB --> API[API Gateway / Microservice Cluster]&#10;  API -->|Outbox Pattern| Kafka[Kafka Event Streaming]&#10;  Kafka --> Worker[Asynchronous Processing Worker]&#10;  Worker --> DB[(PostgreSQL Aurora / Cloud SQL)]"></textarea>
+              <div id="diagram-text-container">
+                <textarea id="diagram-input" rows="8" placeholder="graph TD&#10;  Client[Web / Mobile Client] -->|HTTPS / TLS 1.3| ALB[Application Load Balancer]&#10;  ALB --> API[API Gateway / Microservice Cluster]&#10;  API -->|Outbox Pattern| Kafka[Kafka Event Streaming]&#10;  Kafka --> Worker[Asynchronous Processing Worker]&#10;  Worker --> DB[(PostgreSQL Aurora / Cloud SQL)]"></textarea>
+              </div>
+              <div id="diagram-preview-container" style="display: none; background: #050811; border: 1px dashed var(--accent); border-radius: var(--radius); padding: 1rem; text-align: center; margin-bottom: 0.5rem;">
+                <img id="diagram-image-preview" style="max-height: 180px; max-width: 100%; border-radius: 6px; display: none; margin: 0 auto 0.5rem;" alt="Architecture Diagram Preview">
+                <div id="diagram-pdf-preview" style="display: none; padding: 1rem; color: var(--accent);">
+                  <div style="font-size: 2rem; margin-bottom: 0.3rem;">📄</div>
+                  <strong id="diagram-pdf-filename" style="font-size: 0.9rem;">diagram.pdf</strong>
+                </div>
+                <button type="button" class="btn btn-secondary" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="ReviewModule.clearDiagramUpload()">Clear Image / Reset</button>
+              </div>
               <div style="margin-top: 0.4rem; display: flex; gap: 0.5rem; align-items: center;">
-                <input type="file" id="diagram-file-input" style="font-size: 0.8rem;" onchange="ReviewModule.handleFileUpload('diagram-file-input', 'diagram-input')">
+                <input type="file" id="diagram-file-input" accept=".png,.jpg,.jpeg,.webp,.pdf,.drawio,.xml,.mmd,.txt" style="font-size: 0.8rem;" onchange="ReviewModule.handleDiagramUpload('diagram-file-input')">
               </div>
             </div>
 

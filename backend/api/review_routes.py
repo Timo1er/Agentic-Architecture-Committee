@@ -20,7 +20,9 @@ class StartReviewRequest(BaseModel):
     target_clouds: List[str] # ["AWS", "GCP", "Azure", "AliCloud", "OVH"]
     llm_provider: Optional[str] = "google"
     diagram_text: Optional[str] = None
-    diagram_format: Optional[str] = "mermaid" # mermaid, drawio
+    diagram_format: Optional[str] = "mermaid" # mermaid, drawio, image, pdf
+    diagram_mime_type: Optional[str] = None
+    diagram_filename: Optional[str] = None
     terraform_code: Optional[str] = None
     services_text: Optional[str] = None
 
@@ -40,7 +42,12 @@ async def start_review(
     # 1. Parse all provided inputs
     parsed_inputs = {}
     if req.diagram_text:
-        parsed_inputs["diagram"] = DiagramParser.parse(req.diagram_text, req.diagram_format or "mermaid")
+        parsed_inputs["diagram"] = DiagramParser.parse(
+            req.diagram_text,
+            input_format=req.diagram_format or "mermaid",
+            mime_type=req.diagram_mime_type,
+            filename=req.diagram_filename
+        )
     if req.terraform_code:
         parsed_inputs["terraform"] = TerraformParser.parse_hcl(req.terraform_code)
     if req.services_text:

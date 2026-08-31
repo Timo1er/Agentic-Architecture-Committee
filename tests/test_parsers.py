@@ -73,3 +73,18 @@ def test_services_list_parsing():
     assert "Azure" in detected
     assert "OVH" in detected
     assert "AliCloud" in detected
+
+def test_image_diagram_parsing():
+    mock_png_b64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+    result = DiagramParser.parse(mock_png_b64, input_format="image", filename="arch_diagram.png")
+    assert result["type"] == "image_diagram"
+    assert result["mime_type"] == "image/png"
+    assert result["has_multimodal_payload"] is True
+    assert "raw_data_uri" in result
+
+def test_pdf_diagram_parsing():
+    mock_pdf_b64 = "data:application/pdf;base64,JVBERi0xLjQKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwKL1R5cGUgL1BhZ2Vz"
+    result = DiagramParser.parse(mock_pdf_b64, input_format="pdf", filename="system_design.pdf")
+    assert result["type"] == "pdf_diagram"
+    assert result["mime_type"] == "application/pdf"
+    assert result["filename"] == "system_design.pdf"
