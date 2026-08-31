@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Architecture Review Board (ARB) | Multi-Agent Platform</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+  </script>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header>
+    <div class="logo-area">
+      <span class="logo-badge">ARB</span>
+      <div>
+        <h3 style="font-size: 1.05rem; font-weight: 700;">Architecture Review Board</h3>
+        <p style="font-size: 0.75rem; color: var(--text-secondary);">Autonomous Multi-Agent Review across AWS, GCP, Azure, AliCloud & OVH</p>
+      </div>
+    </div>
+
+    <nav class="nav-tabs">
+      <button class="nav-btn active" data-tab="tab-input">1. New Review</button>
+      <button class="nav-btn" data-tab="tab-board">2. Agent Board</button>
+      <button class="nav-btn" data-tab="tab-adr">3. ADR & Risks</button>
+      <button class="nav-btn" data-tab="tab-feedback">4. Human Feedback</button>
+      <button class="nav-btn" data-tab="tab-admin">5. Administration</button>
+    </nav>
+
+    <div class="user-badge" id="user-display">
+      Session Active (Admin)
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main>
+
+    <!-- Tab 1: New Architecture Review Input -->
+    <section id="tab-input" class="tab-content active">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Submit System Architecture for Multi-Agent Review</h3>
+          <span style="font-size: 0.85rem; color: var(--text-secondary);">Evaluated by Lead Architect, SecOps, FinOps & Synthesis Agents</span>
+        </div>
+
+        <form onsubmit="ReviewModule.submitReview(event)">
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="arch-title">Architecture / Workload Title</label>
+              <input type="text" id="arch-title" placeholder="e.g. Real-Time Payment Ingestion & Analytics Pipeline" required>
+            </div>
+
+            <div class="form-group">
+              <label for="llm-provider-select">Primary LLM Provider Router</label>
+              <select id="llm-provider-select">
+                <option value="google" selected>Google (Gemini 1.5 Pro / Flash)</option>
+                <option value="anthropic">Anthropic (Claude 3.5 Sonnet)</option>
+                <option value="openai">OpenAI (GPT-4o)</option>
+                <option value="mistral">Mistral AI (Mistral Large)</option>
+                <option value="aws">AWS (Bedrock Claude / Titan)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Target Cloud Scope (Multi-Cloud Support)</label>
+            <div class="checkbox-group">
+              <label class="checkbox-item"><input type="checkbox" name="target-cloud" value="AWS" checked> AWS</label>
+              <label class="checkbox-item"><input type="checkbox" name="target-cloud" value="GCP" checked> GCP</label>
+              <label class="checkbox-item"><input type="checkbox" name="target-cloud" value="Azure"> Azure</label>
+              <label class="checkbox-item"><input type="checkbox" name="target-cloud" value="AliCloud"> AliCloud</label>
+              <label class="checkbox-item"><input type="checkbox" name="target-cloud" value="OVH"> OVH</label>
+            </div>
+          </div>
+
+          <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
+
+          <!-- Core Input Ingestion Modalities -->
+          <div class="grid-2">
+            <!-- Modal 1: Architecture Diagram -->
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                <label for="diagram-input">1. Architecture Diagram (Mermaid / Draw.io XML)</label>
+                <select id="diagram-format-select" style="width: auto; padding: 0.2rem 0.5rem; font-size: 0.8rem;">
+                  <option value="mermaid">Mermaid.js</option>
+                  <option value="drawio">Draw.io XML</option>
+                </select>
+              </div>
+              <textarea id="diagram-input" rows="8" placeholder="graph TD&#10;  Client[Web / Mobile Client] -->|HTTPS / TLS 1.3| ALB[Application Load Balancer]&#10;  ALB --> API[API Gateway / Microservice Cluster]&#10;  API -->|Outbox Pattern| Kafka[Kafka Event Streaming]&#10;  Kafka --> Worker[Asynchronous Processing Worker]&#10;  Worker --> DB[(PostgreSQL Aurora / Cloud SQL)]"></textarea>
+              <div style="margin-top: 0.4rem; display: flex; gap: 0.5rem; align-items: center;">
+                <input type="file" id="diagram-file-input" style="font-size: 0.8rem;" onchange="ReviewModule.handleFileUpload('diagram-file-input', 'diagram-input')">
+              </div>
+            </div>
+
+            <!-- Modal 2: Terraform HCL -->
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                <label for="terraform-input">2. Terraform Infrastructure Code (.tf)</label>
+              </div>
+              <textarea id="terraform-input" rows="8" placeholder='resource "aws_eks_cluster" "main" {&#10;  name = "prod-eks-cluster"&#10;  role_arn = aws_iam_role.cluster.arn&#10;}&#10;&#10;resource "aws_rds_cluster" "aurora_db" {&#10;  cluster_identifier = "aurora-db-postgres"&#10;  engine = "aurora-postgresql"&#10;  storage_encrypted = true&#10;}'></textarea>
+              <div style="margin-top: 0.4rem;">
+                <input type="file" id="tf-file-input" style="font-size: 0.8rem;" onchange="ReviewModule.handleFileUpload('tf-file-input', 'terraform-input')">
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal 3: Plain Text Cloud Services -->
+          <div class="form-group">
+            <label for="services-input">3. Plain Text Cloud Service Inventory</label>
+            <textarea id="services-input" rows="3" placeholder="- AWS EKS Kubernetes Cluster (vCPU 16, RAM 64GB)&#10;- AWS Aurora PostgreSQL Multi-AZ&#10;- GCP Cloud Storage for Cold Archive&#10;- OVH Managed Redis Caching"></textarea>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
+            <button type="submit" class="btn btn-primary" style="padding: 0.8rem 2rem; font-size: 1rem;">
+              ⚡ Launch Multi-Agent Review
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Tab 2: Live Multi-Agent Review Board -->
+    <section id="tab-board" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Autonomous Review Board Status</h3>
+          <span style="font-size: 0.85rem; color: var(--text-secondary);">Cyclical LangGraph Orchestration & Agent Collaboration</span>
+        </div>
+
+        <div class="grid-4" style="margin-bottom: 1.5rem;">
+          <div class="agent-card">
+            <div class="agent-header">
+              <span class="agent-title">Lead Architect</span>
+              <span id="lead-badge" class="status-badge status-idle">IDLE</span>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">CQRS, EDA, Microservices vs Modulith & Component Boundaries</p>
+          </div>
+
+          <div class="agent-card">
+            <div class="agent-header">
+              <span class="agent-title">SecOps & Compliance</span>
+              <span id="secops-badge" class="status-badge status-idle">IDLE</span>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">OWASP Top 10, CIS Benchmarks, GDPR, Ingress/Egress Audit</p>
+          </div>
+
+          <div class="agent-card">
+            <div class="agent-header">
+              <span class="agent-title">FinOps Agent</span>
+              <span id="finops-badge" class="status-badge status-idle">IDLE</span>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">Capacity Planning & Multi-Cloud Monthly Cost Estimation</p>
+          </div>
+
+          <div class="agent-card">
+            <div class="agent-header">
+              <span class="agent-title">Synthesis & Validator</span>
+              <span id="validator-badge" class="status-badge status-idle">IDLE</span>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-secondary);">Consolidates ADR, Risk Matrix & Human Checkpoint</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Agent Execution & Orchestration Logs</label>
+          <div id="terminal-logs" class="terminal">
+            <div class="terminal-line">[SYSTEM] Multi-Agent Review Board initialized. Awaiting submission...</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 3: ADR & Deliverables -->
+    <section id="tab-adr" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Architecture Decision Record (ADR)</h3>
+          <div style="display: flex; gap: 0.8rem;">
+            <button class="btn btn-secondary" onclick="ADRViewerModule.exportMarkdown()">📥 Export Markdown</button>
+            <button class="btn btn-primary" onclick="App.switchTab('tab-feedback')">✍️ Human Review & Validate</button>
+          </div>
+        </div>
+
+        <div id="adr-content-area" class="adr-container">
+          <p style="color: var(--text-secondary);">No ADR generated yet. Submit a review from the "New Review" tab.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 4: Continuous Learning & Human Feedback -->
+    <section id="tab-feedback" class="tab-content">
+      <div class="grid-2">
+        <!-- Feedback Form -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Human-in-the-Loop Validation</h3>
+          </div>
+
+          <input type="hidden" id="feedback-review-id">
+
+          <div class="form-group">
+            <label>Operator Quality Rating</label>
+            <div class="star-rating" id="star-rating">
+              <span class="star active" onclick="FeedbackModule.setRating(1)">★</span>
+              <span class="star active" onclick="FeedbackModule.setRating(2)">★</span>
+              <span class="star active" onclick="FeedbackModule.setRating(3)">★</span>
+              <span class="star active" onclick="FeedbackModule.setRating(4)">★</span>
+              <span class="star active" onclick="FeedbackModule.setRating(5)">★</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="feedback-corrections">Architectural Corrections (Stored in Vector DB for Future Learning)</label>
+            <textarea id="feedback-corrections" rows="4" placeholder="e.g. Always require dedicated read-replicas for payment reporting and enforce OVH/EU regional residency for PII data."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="feedback-comments">Reviewer General Remarks</label>
+            <textarea id="feedback-comments" rows="3" placeholder="General feedback or specific condition for approval..."></textarea>
+          </div>
+
+          <div style="display: flex; gap: 0.8rem; margin-top: 1.2rem;">
+            <button class="btn btn-success" style="flex: 1;" onclick="FeedbackModule.submitFeedback('approved')">
+              ✓ Approve ADR
+            </button>
+            <button class="btn btn-warning" style="flex: 1;" onclick="FeedbackModule.submitFeedback('revision_requested')">
+              ↺ Request Agent Revision
+            </button>
+            <button class="btn btn-danger" style="flex: 1;" onclick="FeedbackModule.submitFeedback('rejected')">
+              ✕ Reject Architecture
+            </button>
+          </div>
+        </div>
+
+        <!-- Continuous Learning Memory History -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Historical Continuous Learning Vector Memory</h3>
+            <span style="font-size: 0.75rem; color: #38bdf8;">Qdrant / pgvector</span>
+          </div>
+
+          <div id="feedback-history-list" style="max-height: 480px; overflow-y: auto;">
+            <p style="color: var(--text-secondary);">Loading historical lessons...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 5: Administration & Access Management -->
+    <section id="tab-admin" class="tab-content">
+      <div class="grid-2">
+        <!-- LLM Provider Configuration -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">LLM Provider Configuration</h3>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">Encrypted Storage</span>
+          </div>
+          <div id="admin-providers-list">
+            <p style="color: var(--text-secondary);">Loading providers...</p>
+          </div>
+        </div>
+
+        <!-- Security & Access Management -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Security & SSO / Okta Control</h3>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-item" style="margin-bottom: 0.8rem;">
+              <input type="checkbox" id="sso-enabled">
+              Enable Enterprise SSO Authentication
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label for="sso-provider">SSO Provider Type</label>
+            <select id="sso-provider">
+              <option value="okta">Okta (OIDC)</option>
+              <option value="saml">Generic SAML 2.0</option>
+              <option value="local">Local Authentication Only</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="sso-domain">Identity Provider Domain / URL</label>
+            <input type="text" id="sso-domain" placeholder="dev-123456.okta.com">
+          </div>
+
+          <div class="form-group">
+            <label for="sso-client-id">Client ID</label>
+            <input type="text" id="sso-client-id" placeholder="0oa1234567890abcdef">
+          </div>
+
+          <div class="form-group">
+            <label for="sso-client-secret">Client Secret (Encrypted)</label>
+            <input type="password" id="sso-client-secret" placeholder="••••••••••••••••">
+          </div>
+
+          <div class="form-group">
+            <label for="sso-redirect-uri">Redirect Callback URI</label>
+            <input type="text" id="sso-redirect-uri" value="http://localhost:8000/api/auth/sso/callback">
+          </div>
+
+          <button class="btn btn-primary" onclick="AdminModule.saveSSO()">Save SSO Configuration</button>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Global Guidelines & Reference Sources -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Global Guidelines & Architecture Tenets</h3>
+            <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="AdminModule.addGuideline()">+ Add Guideline</button>
+          </div>
+          <div id="admin-guidelines-list">
+            <p style="color: var(--text-secondary);">Loading corporate guidelines...</p>
+          </div>
+        </div>
+
+        <!-- User & RBAC Management -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">User Roles & Access Rights</h3>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">Admin vs Reviewer</span>
+          </div>
+          <div id="admin-users-list">
+            <p style="color: var(--text-secondary);">Loading users...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Notification Toast -->
+  <div id="toast"></div>
+
+  <!-- JavaScript Modules -->
+  <script src="/static/js/app.js"></script>
+  <script src="/static/js/review.js"></script>
+  <script src="/static/js/adr_viewer.js"></script>
+  <script src="/static/js/feedback.js"></script>
+  <script src="/static/js/admin.js"></script>
+</body>
+</html>
