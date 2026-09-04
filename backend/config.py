@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     # Default Admin
     ADMIN_EMAIL: str = "admin@arb.local"
     ADMIN_PASSWORD: str = "AdminPassword123!"
+    RESET_ADMIN_PASSWORD: bool = False
 
     # Relational Database
     DATABASE_URL: str = "sqlite:///./arb_database.db"
@@ -30,7 +31,7 @@ class Settings(BaseSettings):
 
     # Default LLM Provider
     DEFAULT_LLM_PROVIDER: str = "google" # google, anthropic, openai, mistral, aws
-    DEFAULT_MODEL_NAME: str = "gemini-1.5-pro"
+    DEFAULT_MODEL_NAME: str = "gemini-3.6-flash"
 
     # Provider Keys
     GOOGLE_API_KEY: Optional[str] = None

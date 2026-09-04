@@ -143,26 +143,50 @@ pytest -v
 
 ## API Endpoints Reference
 
-### Authentication & Access
-- `POST /api/auth/register` - Create user (Admin or Reviewer).
-- `POST /api/auth/login` - Authenticate and obtain JWT access token.
-- `GET /api/auth/me` - Get current session profile.
+### Authentication & Access Control
+- `POST /api/auth/register` - Create user account with password strength validation.
+- `POST /api/auth/login` - Authenticate and obtain signed JWT access token.
+- `POST /api/auth/logout` - Audit session logout.
+- `GET /api/auth/me` - Get current authenticated user profile & permissions.
+- `POST /api/auth/change-password` - User self-service password update.
 - `POST /api/auth/sso/init` - Initialize Okta / SAML login handshake.
+- `GET /api/auth/sso/callback` - Complete SSO authorization callback.
 
 ### Multi-Agent Reviews
 - `POST /api/reviews` - Start new architecture review with diagrams/TF/services.
+- `GET /api/reviews` - List historical architecture reviews.
 - `GET /api/reviews/{id}` - Retrieve review status and full ADR.
 - `POST /api/reviews/{id}/validate` - Human operator validation (Approve / Revise / Reject).
+
+### Build Target Cloud Architecture
+- `POST /api/build/propose` - Propose target cloud architecture from text specifications across AWS, GCP, Azure, AliCloud, or OVH.
+- `POST /api/build/propose-file` - Propose architecture with direct multipart document upload (Excel, PDF, Word).
+- `POST /api/build/extract-file` - Parse and preview text from uploaded Excel (.xlsx/.xls), PDF (.pdf), or Word (.docx/.doc).
+- `GET /api/build/sessions` - List historical cloud architecture build proposals.
+- `GET /api/build/sessions/{id}` - Retrieve full proposal, components table, visual diagram, and Draw.io XML.
+- `GET /api/build/sessions/{id}/drawio` - Download standardized Draw.io (.drawio) XML file.
+- `GET /api/build/sessions/{id}/tad` - Download complete Technical Architecture Document (TAD) in Markdown.
+- `DELETE /api/build/sessions/{id}` - Delete historical architecture build session.
 
 ### Continuous Learning & Vector Memory
 - `POST /api/feedback` - Submit human rating, comments, and corrections (auto-indexed to Qdrant).
 - `GET /api/feedback/history` - View historical feedback and vector indexing status.
 
-### Administration
+### Administration & User Management
+- `GET /api/admin/users` - List users with query search, role, and active status filters.
+- `POST /api/admin/users` - Admin direct user creation with role and password assignment.
+- `GET /api/admin/users/{id}` - Get full user account metrics and details.
+- `PUT /api/admin/users/{id}` - Update user details (name, email, role, status) with safety protections.
+- `PUT /api/admin/users/{id}/status` - Enable or disable user account (preventing self-lockout).
+- `PUT /api/admin/users/{id}/role` - Update Admin vs Reviewer permissions.
+- `POST /api/admin/users/{id}/reset-password` - Administrative password reset.
+- `DELETE /api/admin/users/{id}` - Permanently delete user with foreign-key preservation.
+- `GET /api/admin/audit-logs` - Query security and administration event audit trail.
+- `GET /api/admin/stats` - Overview KPI metrics for user administration.
 - `GET / PUT /api/admin/providers/{name}` - Toggle LLM providers and update encrypted API keys.
-- `GET / POST / DELETE /api/admin/guidelines` - Manage corporate architecture rules and tenets.
+- `GET / POST / PUT / DELETE /api/admin/guidelines` - Manage, update, toggle, and audit corporate architecture rules and tenets.
+- `GET / POST / PUT / DELETE /api/admin/sources` - Manage, ingest, and bind reference sources (Excel, PDF, Word, URL) globally and per agent.
 - `GET / PUT /api/admin/sso` - Configure Okta OIDC, domain, client credentials, and callback URI.
-- `GET / PUT /api/admin/users/{id}/role` - Manage Admin vs Reviewer permissions.
 
 ---
 

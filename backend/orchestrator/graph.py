@@ -1,9 +1,11 @@
 import asyncio
 import logging
-from typing import Dict, Any, Literal
+import re
+from typing import Dict, Any, Literal, List
 from langgraph.graph import StateGraph, END
 from backend.orchestrator.state import ARBState
 from backend.core.llm_router import LLMRouter
+from backend.agents.base_agent import sanitize_risk_matrix
 from backend.agents.lead_architect import LeadArchitectAgent
 from backend.agents.secops_compliance import SecOpsComplianceAgent
 from backend.agents.finops import FinOpsAgent
@@ -25,6 +27,12 @@ async def ingest_and_retrieve_memory_node(state: ARBState) -> Dict[str, Any]:
         "logs": [log_msg]
     }
 
+def _get_sources_for_agent(agent_key: str, state: ARBState) -> List[Dict[str, Any]]:
+    sources_dict = state.get("agent_sources") or {}
+    global_sources = sources_dict.get("global", [])
+    specific_sources = sources_dict.get(agent_key, [])
+    return global_sources + specific_sources
+
 async def run_lead_architect_node(state: ARBState) -> Dict[str, Any]:
     """Node: Execute Lead Architect evaluation."""
     llm = LLMRouter.get_llm(provider=state.get("llm_provider"), model_name=state.get("model_name"))
@@ -35,6 +43,7 @@ async def run_lead_architect_node(state: ARBState) -> Dict[str, Any]:
         "target_clouds": state["target_clouds"],
         "inputs": state["raw_inputs"],
         "guidelines": state.get("global_guidelines"),
+        "reference_sources": _get_sources_for_agent("lead_architect", state),
         "historical_lessons": state.get("memory_context"),
         "prior_human_feedback": state.get("human_feedback")
     }
@@ -55,6 +64,7 @@ async def run_secops_node(state: ARBState) -> Dict[str, Any]:
         "target_clouds": state["target_clouds"],
         "inputs": state["raw_inputs"],
         "guidelines": state.get("global_guidelines"),
+        "reference_sources": _get_sources_for_agent("secops_compliance", state),
         "historical_lessons": state.get("memory_context"),
         "prior_human_feedback": state.get("human_feedback")
     }
@@ -75,6 +85,7 @@ async def run_finops_node(state: ARBState) -> Dict[str, Any]:
         "target_clouds": state["target_clouds"],
         "inputs": state["raw_inputs"],
         "guidelines": state.get("global_guidelines"),
+        "reference_sources": _get_sources_for_agent("finops", state),
         "historical_lessons": state.get("memory_context"),
         "prior_human_feedback": state.get("human_feedback")
     }
@@ -87,9 +98,12 @@ async def run_finops_node(state: ARBState) -> Dict[str, Any]:
     }
 
 async def run_synthesis_validator_node(state: ARBState) -> Dict[str, Any]:
-    """Node: Synthesize findings into structured ADR."""
+    """Node: Synthesize findings into structured ADR with dynamic incremental numbering."""
     llm = LLMRouter.get_llm(provider=state.get("llm_provider"), model_name=state.get("model_name"))
     agent = SynthesisValidatorAgent(llm=llm)
+
+    adr_num = state.get("adr_number") or 1
+    adr_pfx = state.get("adr_prefix") or f"ADR-{adr_num:03d}"
 
     payload = {
         "architecture_title": state["title"],
@@ -98,21 +112,94 @@ async def run_synthesis_validator_node(state: ARBState) -> Dict[str, Any]:
         "lead_architect_findings": state.get("lead_architect_output"),
         "secops_findings": state.get("secops_output"),
         "finops_findings": state.get("finops_output"),
+        "reference_sources": _get_sources_for_agent("synthesis_validator", state),
         "historical_lessons": state.get("memory_context"),
         "prior_human_feedback": state.get("human_feedback"),
-        "iteration": state.get("iteration_count", 1)
+        "iteration": state.get("iteration_count", 1),
+        "assigned_adr_number": adr_num,
+        "assigned_adr_prefix": adr_pfx
     }
 
     result = await agent.execute_analysis(payload)
     
-    # Ensure markdown representation is present
-    if "full_markdown_adr" not in result or len(result["full_markdown_adr"]) < 50:
+    # Enforce assigned ADR number and prefix
+    result["adr_number"] = adr_num
+    result["adr_prefix"] = adr_pfx
+
+    raw_title = result.get("adr_title") or f"{adr_pfx}: {state['title']}"
+    clean_subj = re.sub(r'^ADR-\d+\s*:\s*', '', str(raw_title).replace('#', '').strip())
+    result["adr_title"] = f"{adr_pfx}: {clean_subj}"
+
+    # Clean context and decision of any leaked JSON residues
+    if result.get("context"):
+        ctx = str(result["context"])
+        ctx = re.sub(r'",\s*"(?:decision|consequences|risk_matrix)":[\s\S]*$', '', ctx)
+        result["context"] = ctx.strip().strip('"').strip("'")
+
+    if result.get("decision"):
+        dec = str(result["decision"])
+        dec = re.sub(r'",\s*"(?:consequences|risk_matrix)":[\s\S]*$', '', dec)
+        result["decision"] = dec.strip().strip('"').strip("'")
+
+    # Sanitize and validate risk_matrix
+    if not result.get("risk_matrix") or not isinstance(result.get("risk_matrix"), list):
+        result["risk_matrix"] = []
+    result["risk_matrix"] = sanitize_risk_matrix(result["risk_matrix"])
+
+    # If risk_matrix is empty, extract from secops_output and lead_architect_output
+    if len(result["risk_matrix"]) == 0:
+        secops = state.get("secops_output") or {}
+        if isinstance(secops, dict):
+            for vuln in secops.get("critical_vulnerabilities", []):
+                if isinstance(vuln, dict) and vuln.get("issue"):
+                    result["risk_matrix"].append({
+                        "risk": vuln.get("issue"),
+                        "severity": vuln.get("severity", "MEDIUM"),
+                        "impact": "Security vulnerability identified by SecOps Agent",
+                        "mitigation": vuln.get("remediation", "Apply Zero Trust and network hardening")
+                    })
+        lead = state.get("lead_architect_output") or {}
+        if isinstance(lead, dict):
+            for ap in lead.get("anti_patterns_detected", []):
+                result["risk_matrix"].append({
+                    "risk": f"Anti-Pattern: {ap}",
+                    "severity": "MEDIUM",
+                    "impact": "Architectural coupling / scalability risk",
+                    "mitigation": "Refactor component boundaries and implement circuit breakers"
+                })
+        result["risk_matrix"] = sanitize_risk_matrix(result["risk_matrix"])
+
+    # Ensure alternatives_considered is present
+    if not result.get("alternatives_considered"):
+        result["alternatives_considered"] = [
+            {"alternative": "Single-Cloud Monolithic Deployment", "reason_rejected": "Lacks cross-cloud portability and fails sovereignty/redundancy requirements."},
+            {"alternative": "Unmanaged Self-Hosted Infrastructure", "reason_rejected": "Higher operational maintenance overhead and weaker automated compliance guarantees."}
+        ]
+
+    # Ensure decision is present
+    if not result.get("decision") or result.get("decision") == "Architecture evaluated and accepted with specified patterns.":
+        lead = state.get("lead_architect_output") or {}
+        patterns = lead.get("patterns_identified", []) if isinstance(lead, dict) else []
+        style = lead.get("architectural_style", "Distributed Cloud-Native Architecture") if isinstance(lead, dict) else "Cloud-Native Architecture"
+        if patterns:
+            result["decision"] = f"Adopt {style} leveraging {', '.join(patterns)} across target clouds {', '.join(state['target_clouds'])}."
+        else:
+            result["decision"] = f"Adopt a {style} enforcing zero trust network isolation and resilient multi-cloud service tiering."
+
+    # Ensure clean markdown representation is present with correct prefix
+    existing_md = result.get("full_markdown_adr", "")
+    if not existing_md or len(existing_md) < 50 or any(bad in existing_md for bad in ['"risk_matrix":', 'risk_matrix":', '"decision":']):
         result["full_markdown_adr"] = agent.generate_markdown(result, payload)
+    else:
+        # Enforce correct prefix in markdown
+        md = re.sub(r'^#\s*ADR-\d+\s*:\s*', f'# {adr_pfx}: ', existing_md.strip())
+        md = re.sub(r'-\s*\*\*ADR Number:\*\*\s*\d+', f'- **ADR Number:** {adr_num}', md)
+        result["full_markdown_adr"] = md
 
     return {
         "adr_output": result,
         "status": "awaiting_human_validation",
-        "logs": [f"Validator Agent generated ADR '{result.get('adr_title', 'ADR-001')}' and entered Human Validation checkpoint."]
+        "logs": [f"Validator Agent generated {result.get('adr_title', adr_pfx)} and entered Human Validation checkpoint."]
     }
 
 def route_validation(state: ARBState) -> Literal["revision_loop", "finalize_approved", "finalize_rejected", "wait_for_human"]:
@@ -158,17 +245,11 @@ def build_arb_graph() -> StateGraph:
     builder.add_node("finalize_approved", finalize_approved_node)
     builder.add_node("finalize_rejected", finalize_rejected_node)
 
-    # Set flow
+    # Sequential pipeline flow (eliminates concurrent API burst rate limiting on Free Tier)
     builder.set_entry_point("ingest_memory")
-    
-    # Fan-out to specialized agents
     builder.add_edge("ingest_memory", "lead_architect")
-    builder.add_edge("ingest_memory", "secops")
-    builder.add_edge("ingest_memory", "finops")
-
-    # Fan-in to synthesis validator
-    builder.add_edge("lead_architect", "synthesis_validator")
-    builder.add_edge("secops", "synthesis_validator")
+    builder.add_edge("lead_architect", "secops")
+    builder.add_edge("secops", "finops")
     builder.add_edge("finops", "synthesis_validator")
 
     # Router from synthesis validator

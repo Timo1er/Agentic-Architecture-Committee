@@ -48,20 +48,22 @@ class VectorMemoryService:
                 self._qdrant_client = None
 
     def _get_embedding(self, text: str) -> List[float]:
-        """Compute vector embedding using SentenceTransformers or deterministic semantic projection."""
-        if not self._encoder:
-            try:
-                from sentence_transformers import SentenceTransformer
-                self._encoder = SentenceTransformer("all-MiniLM-L6-v2")
-            except Exception:
-                self._encoder = "fallback"
+        """Compute vector embedding using deterministic semantic projection or SentenceTransformers if enabled."""
+        import os
+        if os.getenv("USE_SENTENCE_TRANSFORMERS", "false").lower() == "true":
+            if not self._encoder:
+                try:
+                    from sentence_transformers import SentenceTransformer
+                    self._encoder = SentenceTransformer("all-MiniLM-L6-v2")
+                except Exception:
+                    self._encoder = "fallback"
 
-        if self._encoder and self._encoder != "fallback":
-            try:
-                embedding = self._encoder.encode(text).tolist()
-                return embedding
-            except Exception:
-                pass
+            if self._encoder and self._encoder != "fallback":
+                try:
+                    embedding = self._encoder.encode(text).tolist()
+                    return embedding
+                except Exception:
+                    pass
 
         # Deterministic semantic hash projection (ensures reproducible vectors without heavy models)
         vector = [0.0] * self.vector_size
@@ -134,7 +136,20 @@ class VectorMemoryService:
 
         if self._qdrant_client:
             try:
-                if hasattr(self._qdrant_client, "query_points"):
+                if hasattr(self._qdrant_client, "search"):
+                    hits = self._qdrant_client.search(
+                        collection_name=self.collection_name,
+                        query_vector=vector,
+                        limit=limit
+                    )
+                    for hit in hits:
+                        results.append({
+                            "score": hit.score,
+                            "payload": hit.payload
+                        })
+                    if results:
+                        return results
+                elif hasattr(self._qdrant_client, "query_points"):
                     res = self._qdrant_client.query_points(
                         collection_name=self.collection_name,
                         query=vector,
@@ -145,19 +160,6 @@ class VectorMemoryService:
                         results.append({
                             "score": getattr(p, "score", 1.0),
                             "payload": getattr(p, "payload", {})
-                        })
-                    if results:
-                        return results
-                elif hasattr(self._qdrant_client, "search"):
-                    hits = self._qdrant_client.search(
-                        collection_name=self.collection_name,
-                        query_vector=vector,
-                        limit=limit
-                    )
-                    for hit in hits:
-                        results.append({
-                            "score": hit.score,
-                            "payload": hit.payload
                         })
                     if results:
                         return results

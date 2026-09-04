@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Architecture Review Board (ARB) | Multi-Agent Platform</title>
-  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="stylesheet" href="/static/css/styles.css?v=10">
   <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
   <script>
     mermaid.initialize({ startOnLoad: true, theme: 'dark' });
@@ -23,23 +23,489 @@
     </div>
 
     <nav class="nav-tabs">
-      <button class="nav-btn active" data-tab="tab-input">1. New Review</button>
-      <button class="nav-btn" data-tab="tab-board">2. Agent Board</button>
-      <button class="nav-btn" data-tab="tab-adr">3. ADR & Risks</button>
-      <button class="nav-btn" data-tab="tab-feedback">4. Human Feedback</button>
-      <button class="nav-btn" data-tab="tab-admin">5. Administration</button>
+      <button class="nav-btn active" data-tab="tab-home">Home</button>
+      <button class="nav-btn" data-tab="tab-input">Review Architecture</button>
+      <button class="nav-btn" data-tab="tab-build">Build Architecture</button>
+      <button class="nav-btn" data-tab="tab-admin" style="display: none;">Administration</button>
     </nav>
 
     <div class="user-badge" id="user-display">
-      Session Active (Admin)
+      <div class="user-avatar">--</div>
+      <span>Checking session...</span>
     </div>
   </header>
 
   <!-- Main Container -->
   <main>
 
+    <!-- Tab 0: Home -->
+    <section id="tab-home" class="tab-content active">
+      <div class="card" style="text-align: center; padding: 4rem 2rem;">
+        <h2 style="font-size: 2rem; margin-bottom: 2rem;">Welcome to the Architecture Review Board</h2>
+        <div class="grid-2" style="gap: 2rem; max-width: 900px; margin: 0 auto;">
+          
+          <div class="card" style="cursor: pointer; transition: transform 0.2s;" onclick="App.switchTab('tab-input')" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🔍</div>
+            <h3 style="margin-bottom: 1rem;">Review Analyze architecture</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+              Submit an existing system architecture for a comprehensive multi-agent review covering Security, FinOps, and Architectural best practices.
+            </p>
+          </div>
+
+          <div class="card" style="cursor: pointer; transition: transform 0.2s;" onclick="App.switchTab('tab-build')" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🏗️</div>
+            <h3 style="margin-bottom: 1rem;">Build architecture</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+              Describe your existing on-prem infrastructure. Our workflow will propose the best Cloud infrastructure and build the Technical Architecture Document (TAD) and diagram.
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab Build Architecture Studio -->
+    <section id="tab-build" class="tab-content">
+      
+      <!-- 1. Input Form Card -->
+      <div class="card" id="build-input-card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">Build Target Cloud Architecture</h3>
+            <span style="font-size: 0.85rem; color: var(--text-secondary);">Autonomous Multi-Agent Solution Design tailored for AWS, GCP, Azure, AliCloud &amp; OVH</span>
+          </div>
+        </div>
+
+        <form onsubmit="BuildModule.submitBuildProposal(event)">
+          
+          <!-- Architecture Title & LLM Provider -->
+          <div class="grid-2" style="margin-bottom: 1.2rem;">
+            <div class="form-group">
+              <label for="build-arch-title">Architecture / Workload Title</label>
+              <input type="text" id="build-arch-title" placeholder="e.g. Next-Gen Real-Time Payment Engine &amp; Analytics Platform" required>
+            </div>
+
+            <div class="form-group">
+              <label for="build-llm-provider-select">Primary LLM Provider Router</label>
+              <select id="build-llm-provider-select">
+                <option value="google" selected>Google (Gemini 1.5 / Flash)</option>
+                <option value="anthropic">Anthropic (Claude 3.5 Sonnet)</option>
+                <option value="openai">OpenAI (GPT-4o)</option>
+                <option value="mistral">Mistral AI (Mistral Large)</option>
+                <option value="aws">AWS (Bedrock Claude / Titan)</option>
+                <option value="mock">MockFallbackLLM (Local Dev / Offline)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Target Cloud Provider Selection -->
+          <div class="form-group">
+            <label style="margin-bottom: 0.8rem; display: block; font-weight: 600;">Specify Target Cloud Provider</label>
+            <div class="cloud-selector-grid">
+              
+              <div class="cloud-card selected" data-cloud="AWS">
+                <div class="cloud-icon" style="color: #FF9900;">☁️</div>
+                <div class="cloud-name">AWS</div>
+                <div class="cloud-desc">ECS, EKS, Aurora, SQS, S3, KMS</div>
+              </div>
+
+              <div class="cloud-card" data-cloud="GCP">
+                <div class="cloud-icon" style="color: #4285F4;">🌐</div>
+                <div class="cloud-name">Google Cloud</div>
+                <div class="cloud-desc">GKE, Cloud Run, AlloyDB, Pub/Sub</div>
+              </div>
+
+              <div class="cloud-card" data-cloud="Azure">
+                <div class="cloud-icon" style="color: #0078D4;">🔷</div>
+                <div class="cloud-name">Microsoft Azure</div>
+                <div class="cloud-desc">Container Apps, AKS, Azure SQL</div>
+              </div>
+
+              <div class="cloud-card" data-cloud="AliCloud">
+                <div class="cloud-icon" style="color: #FF6A00;">⚡</div>
+                <div class="cloud-name">Alibaba Cloud</div>
+                <div class="cloud-desc">ACK, ApsaraDB, RocketMQ, OSS</div>
+              </div>
+
+              <div class="cloud-card" data-cloud="OVH">
+                <div class="cloud-icon" style="color: #00539B;">🛡️</div>
+                <div class="cloud-name">OVHcloud</div>
+                <div class="cloud-desc">EU Sovereign, Managed K8s, PostgreSQL</div>
+              </div>
+
+              <div class="cloud-card" data-cloud="Multi-Cloud">
+                <div class="cloud-icon" style="color: #818CF8;">🔄</div>
+                <div class="cloud-name">Multi-Cloud</div>
+                <div class="cloud-desc">Cloud-Agnostic, Hybrid Topology</div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Architectural Tenets & SLA Preferences -->
+          <div class="grid-2" style="margin-bottom: 1.2rem;">
+            <div class="form-group">
+              <label for="build-workload-type">Workload Archetype</label>
+              <select id="build-workload-type">
+                <option value="Microservices &amp; Web Apps" selected>Distributed Microservices &amp; Web Apps</option>
+                <option value="Event-Driven &amp; IoT">Event-Driven &amp; Real-Time Streaming (Kafka/PubSub)</option>
+                <option value="Data Lakehouse &amp; Analytics">Big Data Lakehouse &amp; AI/ML Analytics</option>
+                <option value="Core Financial &amp; Payment">Core Banking &amp; Financial Transaction Ledger</option>
+                <option value="E-Commerce &amp; Retail">High-Traffic E-Commerce &amp; Digital Storefront</option>
+                <option value="Legacy Monolith Cloud Migration">On-Premise Monolith Lift &amp; Modernize</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="build-ha-level">High Availability (HA) &amp; Disaster Recovery</label>
+              <select id="build-ha-level">
+                <option value="Multi-AZ" selected>Multi-AZ High Availability (99.99% SLA)</option>
+                <option value="Multi-Region Active-Active">Multi-Region Active-Active (99.999% SLA)</option>
+                <option value="Multi-Region Active-Passive">Multi-Region Active-Passive (DR Hot Standby)</option>
+                <option value="Single-AZ">Single-AZ (Cost-Optimized / Dev-Test)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid-2" style="margin-bottom: 1.2rem;">
+            <div class="form-group">
+              <label for="build-compliance">Compliance &amp; Governance Posture</label>
+              <select id="build-compliance">
+                <option value="Standard" selected>Standard Cloud Security &amp; CIS Benchmark</option>
+                <option value="GDPR Sovereign (EU)">GDPR Sovereign (EU Data Residency Mandate)</option>
+                <option value="PCI-DSS Level 1">PCI-DSS Level 1 (Cardholder Data Protection)</option>
+                <option value="HIPAA / HITECH">HIPAA / HITECH (Healthcare Clinical Data)</option>
+                <option value="Zero-Trust Defense">Strict Zero-Trust Defense-in-Depth</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="build-budget-tier">Sizing &amp; Capacity Budget Tier</label>
+              <select id="build-budget-tier">
+                <option value="Mid-Market" selected>Mid-Market / Scalable Production ($1,000 - $3,500/mo)</option>
+                <option value="Enterprise Tier-1">Enterprise Tier-1 Mission-Critical ($3,500 - $12,000+/mo)</option>
+                <option value="Startup">Startup / Cost-Optimized ($300 - $1,000/mo)</option>
+              </select>
+            </div>
+          </div>
+
+          <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
+
+          <!-- Input Modality Selector -->
+          <div class="form-group">
+            <label style="margin-bottom: 0.8rem; display: block; font-weight: 600;">Specification Input Modality</label>
+            <div class="modality-nav">
+              <button type="button" class="modality-btn active" data-modality="text">📝 Text Box</button>
+              <button type="button" class="modality-btn" data-modality="excel">📊 Excel (.xlsx, .xls)</button>
+              <button type="button" class="modality-btn" data-modality="pdf">📄 PDF (.pdf)</button>
+              <button type="button" class="modality-btn" data-modality="word">📘 Word (.docx, .doc)</button>
+            </div>
+          </div>
+
+          <!-- Modality 1: Text Box -->
+          <div id="build-text-section">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <label for="build-input-text">Describe Existing On-Premises Systems, Requirements &amp; SLA Constraints</label>
+              <span style="font-size: 0.78rem; color: var(--text-secondary);">Load realistic template:</span>
+            </div>
+
+            <div class="quick-fill-group">
+              <button type="button" class="quick-fill-btn" onclick="BuildModule.loadExample('aws_microservices')">⚡ On-Prem to AWS</button>
+              <button type="button" class="quick-fill-btn" onclick="BuildModule.loadExample('gcp_data')">📊 Healthcare Lakehouse (GCP)</button>
+              <button type="button" class="quick-fill-btn" onclick="BuildModule.loadExample('azure_finance')">💳 Banking Core (Azure)</button>
+              <button type="button" class="quick-fill-btn" onclick="BuildModule.loadExample('ovh_sovereign')">🇪🇺 Sovereign Stack (OVH)</button>
+              <button type="button" class="quick-fill-btn" onclick="BuildModule.loadExample('alicloud_ecommerce')">🌏 APAC E-Commerce (AliCloud)</button>
+            </div>
+
+            <textarea id="build-input-text" rows="8" placeholder="Describe your existing on-premise infrastructure, server inventories, CPU/RAM specs, databases, network zones, performance targets, and any specific constraints..."></textarea>
+          </div>
+
+          <!-- Modality 2, 3, 4: File Upload (Excel, PDF, Word) -->
+          <div id="build-file-section" style="display: none;">
+            <div class="build-dropzone" id="build-dropzone" onclick="document.getElementById('build-file-input').click()">
+              <div class="dropzone-icon">📁</div>
+              <div class="dropzone-title" id="build-dropzone-title">Drop Excel / PDF / Word document here</div>
+              <div class="dropzone-subtitle" id="build-dropzone-subtitle">or click to browse from your device</div>
+              <input type="file" id="build-file-input" style="display: none;">
+            </div>
+
+            <!-- Upload Preview Card -->
+            <div class="file-preview-card" id="build-file-preview-card" style="display: none;">
+              <div class="file-preview-info">
+                <span class="file-preview-icon">📄</span>
+                <div>
+                  <div style="font-weight: 600; font-size: 0.9rem;" id="build-file-name">document.xlsx</div>
+                  <div style="font-size: 0.75rem; color: var(--text-secondary);" id="build-file-size">45 KB</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;" onclick="BuildModule.clearUploadedFile()">Remove File</button>
+            </div>
+
+            <div id="build-file-preview-box" style="display: none; margin-top: 1rem;">
+              <label style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.4rem; display: block;">Extracted File Content Preview</label>
+              <div class="preview-text-box" id="build-file-preview-text"></div>
+            </div>
+          </div>
+
+          <!-- Additional Directives -->
+          <div class="form-group" style="margin-top: 1.2rem;">
+            <label for="build-additional-notes">Additional Architectural Directives &amp; Security Mandates (Optional)</label>
+            <textarea id="build-additional-notes" rows="2" placeholder="e.g. Must include an asynchronous message broker, Customer-Managed Keys (CMEK), and isolated database subnets."></textarea>
+          </div>
+
+          <!-- Submit Buttons -->
+          <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+            <button type="button" class="btn btn-secondary" onclick="BuildModule.resetToNewBuild()">Clear Form</button>
+            <button type="submit" class="btn btn-primary" style="padding: 0.8rem 2rem; font-size: 1rem; font-weight: 700;">
+              🚀 Propose Cloud Architecture
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+      <!-- 2. Proposal Results Studio Card -->
+      <div class="card" id="build-results-card" style="display: none;">
+        
+        <!-- Results Top Action Bar -->
+        <div class="card-header" style="flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.3rem;">
+              <span id="build-res-cloud-badge" class="cloud-service-badge aws">AWS</span>
+              <h3 class="card-title" id="build-res-title">Proposed Cloud Architecture</h3>
+            </div>
+            <span style="font-size: 0.85rem; color: var(--text-secondary);">Enterprise Solution Blueprint &amp; Multi-Tier Technical Architecture</span>
+          </div>
+
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-secondary" style="font-size: 0.82rem;" onclick="BuildModule.downloadDrawIOFile()">📥 Download .drawio</button>
+            <button class="btn btn-secondary" style="font-size: 0.82rem;" onclick="BuildModule.downloadDiagramPNG()">🖼️ Export Diagram (PNG)</button>
+            <button class="btn btn-secondary" style="font-size: 0.82rem;" onclick="BuildModule.exportComponentsCSV()">📊 Export CSV</button>
+            <button class="btn btn-secondary" style="font-size: 0.82rem;" onclick="BuildModule.downloadTADMarkdown()">📑 Download TAD</button>
+            <button class="btn btn-primary" style="font-size: 0.82rem;" onclick="BuildModule.resetToNewBuild()">+ New Build</button>
+          </div>
+        </div>
+
+        <!-- Proposal Navigation Sub-Tabs -->
+        <div class="modality-nav" style="margin-bottom: 1.5rem;">
+          <button class="modality-btn build-tab-btn active" data-tab="overview" onclick="BuildModule.switchProposalTab('overview')">📋 Executive Summary &amp; Overview</button>
+          <button class="modality-btn build-tab-btn" data-tab="diagram" onclick="BuildModule.switchProposalTab('diagram')">🎨 Detailed Diagram (Image + Draw.io)</button>
+          <button class="modality-btn build-tab-btn" data-tab="components" onclick="BuildModule.switchProposalTab('components')">📊 Architecture Components Table</button>
+          <button class="modality-btn build-tab-btn" data-tab="tad" onclick="BuildModule.switchProposalTab('tad')">📑 Technical Architecture Document (TAD)</button>
+        </div>
+
+        <!-- Tab Panel 1: Overview & KPIs -->
+        <div id="build-panel-overview">
+          
+          <!-- KPI Metrics Cards -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label">Estimated Monthly Run-Rate</div>
+              <div class="kpi-value accent" id="kpi-cost">$0.00</div>
+              <div class="kpi-subtext">Compute, Database &amp; Egress</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-label">Target Cloud Provider</div>
+              <div class="kpi-value" id="kpi-cloud" style="color: #FF9900;">AWS</div>
+              <div class="kpi-subtext">Native Managed Services</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-label">Architecture Components</div>
+              <div class="kpi-value success" id="kpi-components-count">9</div>
+              <div class="kpi-subtext">Multi-Tier Stack</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-label">High Availability SLA</div>
+              <div class="kpi-value" id="kpi-ha" style="font-size: 1.15rem; color: #38bdf8;">Multi-AZ</div>
+              <div class="kpi-subtext">RTO &lt; 15m, RPO &lt; 1m</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-label">Compliance Baseline</div>
+              <div class="kpi-value" id="kpi-compliance" style="font-size: 1.15rem; color: #f87171;">Standard &amp; CIS</div>
+              <div class="kpi-subtext">Zero-Trust &amp; CMEK Encrypted</div>
+            </div>
+          </div>
+
+          <!-- Executive Summary Content -->
+          <div class="card" style="background: #0b1120; margin-bottom: 1.5rem; padding: 1.3rem;">
+            <h4 style="color: var(--text-primary); margin-bottom: 0.6rem; font-size: 1.05rem;">Architecture Strategy &amp; Executive Summary</h4>
+            <p id="build-exec-summary" style="color: var(--text-secondary); font-size: 0.92rem; line-height: 1.6;"></p>
+            <div style="margin-top: 1rem; padding-top: 0.8rem; border-top: 1px solid var(--border-color);">
+              <span style="font-weight: 600; font-size: 0.85rem; color: var(--text-primary);">FinOps Spend Breakdown: </span>
+              <span id="build-cost-summary" style="font-size: 0.85rem; color: #38bdf8;"></span>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 1.5rem;">
+            <button class="btn btn-secondary" onclick="BuildModule.switchProposalTab('diagram')">View Architecture Diagram (Image + Draw.io) →</button>
+            <button class="btn btn-secondary" onclick="BuildModule.switchProposalTab('components')">View Components Table →</button>
+            <button class="btn btn-primary" onclick="BuildModule.switchProposalTab('tad')">Read Complete TAD →</button>
+          </div>
+
+        </div>
+
+        <!-- Tab Panel 2: Diagram Studio (Image + Draw.io) -->
+        <div id="build-panel-diagram" style="display: none;">
+          
+          <!-- Sub-toolbar: Switch between Visual Image vs Draw.io Studio -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.8rem;">
+            <div class="nav-tabs" style="background: rgba(0,0,0,0.2); padding: 0.3rem; border-radius: 8px;">
+              <button class="nav-btn diagram-mode-btn active" data-mode="visual" onclick="BuildModule.setDiagramSubTab('visual')">🖼️ Visual Diagram (Image / Canvas)</button>
+              <button class="nav-btn diagram-mode-btn" data-mode="drawio" onclick="BuildModule.setDiagramSubTab('drawio')">📐 Draw.io Studio (XML &amp; diagrams.net)</button>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn btn-secondary" style="font-size: 0.8rem;" onclick="BuildModule.downloadDiagramSVG()">Download SVG</button>
+              <button class="btn btn-secondary" style="font-size: 0.8rem;" onclick="BuildModule.downloadDiagramPNG()">Download PNG</button>
+              <button class="btn btn-primary" style="font-size: 0.8rem;" onclick="BuildModule.downloadDrawIOFile()">📥 Download .drawio File</button>
+              <button class="btn btn-secondary" style="font-size: 0.8rem;" onclick="BuildModule.openInDiagramsNet()">🚀 Open in diagrams.net</button>
+            </div>
+          </div>
+
+          <!-- View 1: Visual Rendered Diagram View -->
+          <div id="build-diagram-visual-view">
+            <div class="diagram-toolbar">
+              <span style="font-size: 0.85rem; color: var(--text-secondary);">Interactive Visual Architecture Diagram (High-DPI Vector Render)</span>
+              <div class="zoom-controls">
+                <button class="zoom-btn" title="Zoom In" onclick="BuildModule.zoomDiagram(0.15)">+</button>
+                <button class="zoom-btn" title="Zoom Out" onclick="BuildModule.zoomDiagram(-0.15)">-</button>
+                <button class="zoom-btn" title="Reset Zoom" onclick="BuildModule.resetDiagramZoom()">↺</button>
+              </div>
+            </div>
+            <div class="diagram-viewport" id="build-mermaid-viewport">
+              <!-- Rendered Mermaid SVG is placed here -->
+            </div>
+          </div>
+
+          <!-- View 2: Draw.io Studio View -->
+          <div id="build-diagram-drawio-view" style="display: none;">
+            <div class="diagram-toolbar">
+              <span style="font-size: 0.85rem; color: var(--text-secondary);">Draw.io / diagrams.net mxGraphModel XML Standard</span>
+              <div style="display: flex; gap: 0.5rem;">
+                <button class="btn btn-secondary" style="padding: 0.25rem 0.7rem; font-size: 0.78rem;" onclick="BuildModule.copyDrawIOXML()">📋 Copy XML</button>
+                <button class="btn btn-primary" style="padding: 0.25rem 0.7rem; font-size: 0.78rem;" onclick="BuildModule.downloadDrawIOFile()">📥 Download .drawio</button>
+                <button class="btn btn-secondary" style="padding: 0.25rem 0.7rem; font-size: 0.78rem;" onclick="BuildModule.openInDiagramsNet()">🚀 Open in diagrams.net</button>
+              </div>
+            </div>
+            <div class="preview-text-box" style="max-height: 480px; border-radius: 0 0 8px 8px; border-top: none;">
+              <pre id="build-drawio-xml-pre"></pre>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Tab Panel 3: Components Table -->
+        <div id="build-panel-components" style="display: none;">
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.8rem;">
+            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+              <button class="quick-fill-btn tier-filter-pill active" data-tier="all" onclick="BuildModule.filterComponentsByTier('all')">All Tiers</button>
+              <button class="quick-fill-btn tier-filter-pill" data-tier="edge" onclick="BuildModule.filterComponentsByTier('edge')">Edge &amp; Ingress</button>
+              <button class="quick-fill-btn tier-filter-pill" data-tier="compute" onclick="BuildModule.filterComponentsByTier('compute')">Application &amp; Compute</button>
+              <button class="quick-fill-btn tier-filter-pill" data-tier="data" onclick="BuildModule.filterComponentsByTier('data')">Database &amp; State</button>
+              <button class="quick-fill-btn tier-filter-pill" data-tier="messaging" onclick="BuildModule.filterComponentsByTier('messaging')">Messaging &amp; Async</button>
+              <button class="quick-fill-btn tier-filter-pill" data-tier="security" onclick="BuildModule.filterComponentsByTier('security')">Security &amp; Observability</button>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <input type="text" placeholder="Search components..." style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-radius: 6px; border: 1px solid var(--border-color); background: #020617; color: #fff;" oninput="BuildModule.searchComponentsTable(this.value)">
+              <button class="btn btn-secondary" style="font-size: 0.8rem;" onclick="BuildModule.exportComponentsCSV()">📥 Export CSV</button>
+              <button class="btn btn-secondary" style="font-size: 0.8rem;" onclick="BuildModule.copyComponentsJSON()">📋 Copy JSON</button>
+            </div>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table class="arch-components-table">
+              <thead>
+                <tr>
+                  <th>Component Name</th>
+                  <th>Tier / Layer</th>
+                  <th>Cloud Native Service</th>
+                  <th>Sizing &amp; Hardware Specs</th>
+                  <th>Purpose &amp; Responsibility</th>
+                  <th>HA &amp; Resilience</th>
+                  <th>Security &amp; Network</th>
+                  <th style="text-align: right;">Monthly Est. (USD)</th>
+                </tr>
+              </thead>
+              <tbody id="build-components-tbody">
+                <!-- Populated dynamically -->
+              </tbody>
+              <tfoot>
+                <tr style="border-top: 2px solid var(--accent); background: rgba(56, 189, 248, 0.05); font-weight: 700;">
+                  <td colspan="7" style="padding: 1rem 0.8rem; text-align: right; color: var(--text-primary);">TOTAL ESTIMATED MONTHLY RUN-RATE:</td>
+                  <td style="padding: 1rem 0.8rem; text-align: right; color: var(--accent); font-size: 1.15rem;" id="build-table-total-cost">$0.00</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+        </div>
+
+        <!-- Tab Panel 4: Full TAD Markdown Document -->
+        <div id="build-panel-tad" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.8rem;">
+            <span style="font-size: 0.85rem; color: var(--text-secondary);">Enterprise Technical Architecture Document (TAD) Specification</span>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn btn-secondary" style="font-size: 0.8rem;" onclick="BuildModule.copyTADMarkdown()">📋 Copy Markdown</button>
+              <button class="btn btn-secondary" style="font-size: 0.8rem;" onclick="BuildModule.downloadTADMarkdown()">📥 Download .md</button>
+              <button class="btn btn-secondary" style="font-size: 0.8rem;" onclick="BuildModule.printTAD()">🖨️ Print / Save PDF</button>
+            </div>
+          </div>
+
+          <div class="card" style="background: #020617; padding: 2rem; border-radius: 8px;">
+            <div id="build-tad-rendered-content" class="markdown-body" style="color: #e2e8f0; line-height: 1.7;"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 3. Historical Architecture Builds Archive Card -->
+      <div class="card" style="margin-top: 2rem;">
+        <div class="card-header">
+          <h3 class="card-title">Past Architecture Proposals Archive</h3>
+          <span style="font-size: 0.85rem; color: var(--text-secondary);">Saved Technical Architecture Documents and Topologies</span>
+        </div>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border-color); text-align: left; color: var(--text-secondary); font-size: 0.8rem;">
+                <th style="padding: 0.6rem;">Architecture Title</th>
+                <th style="padding: 0.6rem;">Target Cloud</th>
+                <th style="padding: 0.6rem;">Input Modality</th>
+                <th style="padding: 0.6rem;">Monthly Spend</th>
+                <th style="padding: 0.6rem;">Date Created</th>
+                <th style="padding: 0.6rem; text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="build-history-tbody">
+              <!-- Loaded dynamically via BuildModule.loadPastBuilds() -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- Secondary Nav for Review Tabs (Breadcrumb) -->
+    <div id="review-sub-nav" style="display: none; align-items: center; margin-bottom: 1.5rem; padding: 0.8rem 1.5rem; background: rgba(255, 255, 255, 0.03); border-radius: 8px; font-size: 0.9rem;">
+      <span style="color: var(--text-secondary); margin-right: 0.8rem;">Workflow Review :</span>
+      <button class="nav-btn" data-tab="tab-input" style="padding: 0.3rem 0.8rem;">1. New Review</button>
+      <span style="color: var(--text-secondary); margin: 0 0.2rem;">›</span>
+      <button class="nav-btn" data-tab="tab-board" style="padding: 0.3rem 0.8rem;">2. Agent Board</button>
+      <span style="color: var(--text-secondary); margin: 0 0.2rem;">›</span>
+      <button class="nav-btn" data-tab="tab-adr" style="padding: 0.3rem 0.8rem;">3. ADR & Risks</button>
+      <span style="color: var(--text-secondary); margin: 0 0.2rem;">›</span>
+      <button class="nav-btn" data-tab="tab-feedback" style="padding: 0.3rem 0.8rem;">4. Human Feedback</button>
+    </div>
+
     <!-- Tab 1: New Architecture Review Input -->
-    <section id="tab-input" class="tab-content active">
+    <section id="tab-input" class="tab-content">
       <div class="card">
         <div class="card-header">
           <h3 class="card-title">Submit System Architecture for Multi-Agent Review</h3>
@@ -61,6 +527,7 @@
                 <option value="openai">OpenAI (GPT-4o)</option>
                 <option value="mistral">Mistral AI (Mistral Large)</option>
                 <option value="aws">AWS (Bedrock Claude / Titan)</option>
+                <option value="mock">MockFallbackLLM (Local Dev / Test)</option>
               </select>
             </div>
           </div>
@@ -78,51 +545,36 @@
 
           <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
 
-          <!-- Core Input Ingestion Modalities -->
-          <div class="grid-2">
-            <!-- Modal 1: Architecture Diagram -->
-            <div class="form-group">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-                <label for="diagram-input">1. Architecture Diagram (Mermaid / Draw.io / Image / PDF)</label>
-                <select id="diagram-format-select" style="width: auto; padding: 0.2rem 0.5rem; font-size: 0.8rem;" onchange="ReviewModule.onDiagramFormatChange()">
-                  <option value="mermaid">Mermaid.js</option>
-                  <option value="drawio">Draw.io XML</option>
-                  <option value="image">Image (PNG, JPEG, WebP)</option>
-                  <option value="pdf">PDF Document (.pdf)</option>
-                </select>
-              </div>
-              <div id="diagram-text-container">
-                <textarea id="diagram-input" rows="8" placeholder="graph TD&#10;  Client[Web / Mobile Client] -->|HTTPS / TLS 1.3| ALB[Application Load Balancer]&#10;  ALB --> API[API Gateway / Microservice Cluster]&#10;  API -->|Outbox Pattern| Kafka[Kafka Event Streaming]&#10;  Kafka --> Worker[Asynchronous Processing Worker]&#10;  Worker --> DB[(PostgreSQL Aurora / Cloud SQL)]"></textarea>
-              </div>
-              <div id="diagram-preview-container" style="display: none; background: #050811; border: 1px dashed var(--accent); border-radius: var(--radius); padding: 1rem; text-align: center; margin-bottom: 0.5rem;">
-                <img id="diagram-image-preview" style="max-height: 180px; max-width: 100%; border-radius: 6px; display: none; margin: 0 auto 0.5rem;" alt="Architecture Diagram Preview">
-                <div id="diagram-pdf-preview" style="display: none; padding: 1rem; color: var(--accent);">
-                  <div style="font-size: 2rem; margin-bottom: 0.3rem;">📄</div>
-                  <strong id="diagram-pdf-filename" style="font-size: 0.9rem;">diagram.pdf</strong>
-                </div>
-                <button type="button" class="btn btn-secondary" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="ReviewModule.clearDiagramUpload()">Clear Image / Reset</button>
-              </div>
-              <div style="margin-top: 0.4rem; display: flex; gap: 0.5rem; align-items: center;">
-                <input type="file" id="diagram-file-input" accept=".png,.jpg,.jpeg,.webp,.pdf,.drawio,.xml,.mmd,.txt" style="font-size: 0.8rem;" onchange="ReviewModule.handleDiagramUpload('diagram-file-input')">
-              </div>
-            </div>
+          <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
 
-            <!-- Modal 2: Terraform HCL -->
-            <div class="form-group">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-                <label for="terraform-input">2. Terraform Infrastructure Code (.tf)</label>
-              </div>
-              <textarea id="terraform-input" rows="8" placeholder='resource "aws_eks_cluster" "main" {&#10;  name = "prod-eks-cluster"&#10;  role_arn = aws_iam_role.cluster.arn&#10;}&#10;&#10;resource "aws_rds_cluster" "aurora_db" {&#10;  cluster_identifier = "aurora-db-postgres"&#10;  engine = "aurora-postgresql"&#10;  storage_encrypted = true&#10;}'></textarea>
-              <div style="margin-top: 0.4rem;">
-                <input type="file" id="tf-file-input" style="font-size: 0.8rem;" onchange="ReviewModule.handleFileUpload('tf-file-input', 'terraform-input')">
-              </div>
-            </div>
+          <!-- Unified Input Modality -->
+          <div class="form-group">
+            <label for="unified-format-select">Architecture Input Format</label>
+            <select id="unified-format-select" onchange="ReviewModule.onUnifiedFormatChange()">
+              <option value="mermaid">Mermaid.js</option>
+              <option value="drawio">Draw.io XML</option>
+              <option value="image">Image (png, jpg, webP)</option>
+              <option value="document">Document (.pdf, .xlsx, csv, docx, txt)</option>
+              <option value="terraform">Terraform Code (.tf)</option>
+              <option value="services">Cloud Service Inventory</option>
+            </select>
           </div>
 
-          <!-- Modal 3: Plain Text Cloud Services -->
-          <div class="form-group">
-            <label for="services-input">3. Plain Text Cloud Service Inventory</label>
-            <textarea id="services-input" rows="3" placeholder="- AWS EKS Kubernetes Cluster (vCPU 16, RAM 64GB)&#10;- AWS Aurora PostgreSQL Multi-AZ&#10;- GCP Cloud Storage for Cold Archive&#10;- OVH Managed Redis Caching"></textarea>
+          <div class="form-group" id="unified-text-container">
+            <textarea id="unified-input" rows="8" placeholder="graph TD\n  Client --> ALB"></textarea>
+          </div>
+
+          <div id="unified-preview-container" style="display: none; background: #050811; border: 1px dashed var(--accent); border-radius: var(--radius); padding: 1rem; text-align: center; margin-bottom: 0.5rem;">
+            <img id="unified-image-preview" style="max-height: 180px; max-width: 100%; border-radius: 6px; display: none; margin: 0 auto 0.5rem;" alt="Preview">
+            <div id="unified-doc-preview" style="display: none; padding: 1rem; color: var(--accent);">
+              <div style="font-size: 2rem; margin-bottom: 0.3rem;">📄</div>
+              <strong id="unified-doc-filename" style="font-size: 0.9rem;">document.pdf</strong>
+            </div>
+            <button type="button" class="btn btn-secondary" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" onclick="ReviewModule.clearUnifiedUpload()">Clear File / Reset</button>
+          </div>
+
+          <div class="form-group" id="unified-file-container">
+            <input type="file" id="unified-file-input" accept=".png,.jpg,.jpeg,.webp,.pdf,.xlsx,.csv,.docx,.txt,.drawio,.xml,.mmd,.tf" style="font-size: 0.8rem;" onchange="ReviewModule.handleUnifiedUpload()">
           </div>
 
           <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
@@ -131,6 +583,30 @@
             </button>
           </div>
         </form>
+      </div>
+
+      <!-- Historical Reviews -->
+      <div class="card" style="margin-top: 1.5rem;">
+        <div class="card-header">
+          <h3 class="card-title">Past Architecture Reviews</h3>
+          <span style="font-size: 0.85rem; color: var(--text-secondary);">Historical multi-agent evaluations and their status</span>
+        </div>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; margin-top: 0.5rem; text-align: left; font-size: 0.9rem;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary);">
+                <th style="padding: 0.8rem 0.5rem;">Title</th>
+                <th style="padding: 0.8rem 0.5rem;">Date</th>
+                <th style="padding: 0.8rem 0.5rem;">Target Clouds</th>
+                <th style="padding: 0.8rem 0.5rem;">Status</th>
+                <th style="padding: 0.8rem 0.5rem; text-align: right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="past-reviews-table-body">
+              <tr><td colspan="5" style="text-align: center; padding: 1rem; color: var(--text-secondary);">Loading past reviews...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -263,8 +739,155 @@
 
     <!-- Tab 5: Administration & Access Management -->
     <section id="tab-admin" class="tab-content">
-      <div class="grid-2">
-        <!-- LLM Provider Configuration -->
+      <!-- Admin Sub-Navigation Tabs -->
+      <div class="admin-sub-tabs">
+        <button class="admin-sub-tab active" data-subtab="admin-sub-users" onclick="AdminModule.switchAdminSubTab('admin-sub-users')">
+          👥 User Administration & RBAC
+        </button>
+        <button class="admin-sub-tab" data-subtab="admin-sub-providers" onclick="AdminModule.switchAdminSubTab('admin-sub-providers')">
+          🤖 LLM Providers
+        </button>
+        <button class="admin-sub-tab" data-subtab="admin-sub-sso" onclick="AdminModule.switchAdminSubTab('admin-sub-sso')">
+          🛡️ Enterprise SSO & Security
+        </button>
+        <button class="admin-sub-tab" data-subtab="admin-sub-guidelines" onclick="AdminModule.switchAdminSubTab('admin-sub-guidelines')">
+          📜 Global Architecture Tenets
+        </button>
+      </div>
+
+      <!-- Sub-Tab 1: User Administration & RBAC -->
+      <div id="admin-sub-users" class="admin-sub-content">
+        <!-- KPI Metrics -->
+        <div class="grid-4" style="margin-bottom: 1.5rem;">
+          <div class="stat-card">
+            <div class="stat-icon blue">👥</div>
+            <div>
+              <div class="stat-value" id="stat-total-users">-</div>
+              <div class="stat-label">Total Users</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">✅</div>
+            <div>
+              <div class="stat-value" id="stat-active-users">-</div>
+              <div class="stat-label">Active Users</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple">👑</div>
+            <div>
+              <div class="stat-value" id="stat-admin-users">-</div>
+              <div class="stat-label">Administrators</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon amber">🔍</div>
+            <div>
+              <div class="stat-value" id="stat-reviewer-users">-</div>
+              <div class="stat-label">Reviewers</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Users Management Table Card -->
+        <div class="card">
+          <div class="card-header" style="flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h3 class="card-title">User Accounts & Role Permissions</h3>
+              <span style="font-size: 0.85rem; color: var(--text-secondary);">Manage system users, access roles, and account statuses</span>
+            </div>
+            <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+              <button class="btn btn-primary" onclick="AdminModule.openCreateUserModal()">
+                + Add New User
+              </button>
+            </div>
+          </div>
+
+          <!-- Filters Toolbar -->
+          <div style="display: flex; gap: 0.8rem; margin-bottom: 1rem; flex-wrap: wrap; background: #0f172a; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border-color);">
+            <div style="flex: 2; min-width: 200px;">
+              <input type="text" id="user-search-input" placeholder="Search by name or email..." oninput="AdminModule.loadUsers()" style="padding: 0.5rem 0.8rem;">
+            </div>
+            <div style="flex: 1; min-width: 130px;">
+              <select id="user-role-filter" onchange="AdminModule.loadUsers()" style="padding: 0.5rem 0.8rem;">
+                <option value="">All Roles</option>
+                <option value="Admin">Admin</option>
+                <option value="Reviewer">Reviewer</option>
+              </select>
+            </div>
+            <div style="flex: 1; min-width: 130px;">
+              <select id="user-status-filter" onchange="AdminModule.loadUsers()" style="padding: 0.5rem 0.8rem;">
+                <option value="">All Statuses</option>
+                <option value="true">Active</option>
+                <option value="false">Disabled</option>
+              </select>
+            </div>
+            <button class="btn btn-secondary" onclick="AdminModule.loadUsers(); AdminModule.loadStats();" style="padding: 0.5rem 0.9rem;">
+              🔄 Refresh
+            </button>
+          </div>
+
+          <!-- Table Container -->
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase;">
+                  <th style="padding: 0.7rem 0.6rem;">User Profile</th>
+                  <th style="padding: 0.7rem 0.6rem;">Role</th>
+                  <th style="padding: 0.7rem 0.6rem;">Status</th>
+                  <th style="padding: 0.7rem 0.6rem;">Last Login</th>
+                  <th style="padding: 0.7rem 0.6rem;">Activity</th>
+                  <th style="padding: 0.7rem 0.6rem; text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-users-table-body">
+                <tr><td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-secondary);">Loading user accounts...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Security Audit Trail Card -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Security & Administrative Audit Trail</h3>
+              <span style="font-size: 0.85rem; color: var(--text-secondary);">Immutable log of authentication events, user changes, and access modifications</span>
+            </div>
+            <div style="display: flex; gap: 0.6rem;">
+              <select id="audit-action-filter" onchange="AdminModule.loadAuditLogs(this.value)" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; width: auto;">
+                <option value="">All Security Events</option>
+                <option value="LOGIN">Logins & Sign-ins</option>
+                <option value="USER_">User Administration</option>
+                <option value="PASSWORD">Password Changes</option>
+                <option value="BLOCKED">Blocked Attempts</option>
+              </select>
+              <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="AdminModule.loadAuditLogs(document.getElementById('audit-action-filter').value)">
+                🔄 Refresh
+              </button>
+            </div>
+          </div>
+          <div style="overflow-x: auto; max-height: 400px;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary); font-size: 0.78rem; text-transform: uppercase;">
+                  <th style="padding: 0.6rem 0.5rem;">Timestamp</th>
+                  <th style="padding: 0.6rem 0.5rem;">User</th>
+                  <th style="padding: 0.6rem 0.5rem;">Action</th>
+                  <th style="padding: 0.6rem 0.5rem;">Event Details</th>
+                  <th style="padding: 0.6rem 0.5rem;">Client IP</th>
+                </tr>
+              </thead>
+              <tbody id="admin-audit-logs-table-body">
+                <tr><td colspan="5" style="text-align: center; padding: 1.5rem; color: var(--text-secondary);">Loading audit logs...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-Tab 2: LLM Providers -->
+      <div id="admin-sub-providers" class="admin-sub-content" style="display: none;">
         <div class="card">
           <div class="card-header">
             <h3 class="card-title">LLM Provider Configuration</h3>
@@ -274,20 +897,20 @@
             <p style="color: var(--text-secondary);">Loading providers...</p>
           </div>
         </div>
+      </div>
 
-        <!-- Security & Access Management -->
+      <!-- Sub-Tab 3: SSO & Security -->
+      <div id="admin-sub-sso" class="admin-sub-content" style="display: none;">
         <div class="card">
           <div class="card-header">
             <h3 class="card-title">Security & SSO / Okta Control</h3>
           </div>
-
           <div class="form-group">
             <label class="checkbox-item" style="margin-bottom: 0.8rem;">
               <input type="checkbox" id="sso-enabled">
               Enable Enterprise SSO Authentication
             </label>
           </div>
-
           <div class="form-group">
             <label for="sso-provider">SSO Provider Type</label>
             <select id="sso-provider">
@@ -296,51 +919,88 @@
               <option value="local">Local Authentication Only</option>
             </select>
           </div>
-
           <div class="form-group">
             <label for="sso-domain">Identity Provider Domain / URL</label>
             <input type="text" id="sso-domain" placeholder="dev-123456.okta.com">
           </div>
-
           <div class="form-group">
             <label for="sso-client-id">Client ID</label>
             <input type="text" id="sso-client-id" placeholder="0oa1234567890abcdef">
           </div>
-
           <div class="form-group">
             <label for="sso-client-secret">Client Secret (Encrypted)</label>
             <input type="password" id="sso-client-secret" placeholder="••••••••••••••••">
           </div>
-
           <div class="form-group">
             <label for="sso-redirect-uri">Redirect Callback URI</label>
             <input type="text" id="sso-redirect-uri" value="http://localhost:8000/api/auth/sso/callback">
           </div>
-
           <button class="btn btn-primary" onclick="AdminModule.saveSSO()">Save SSO Configuration</button>
         </div>
       </div>
 
-      <div class="grid-2">
-        <!-- Global Guidelines & Reference Sources -->
-        <div class="card">
+      <!-- Sub-Tab 4: Guidelines & Sources -->
+      <div id="admin-sub-guidelines" class="admin-sub-content" style="display: none;">
+        <!-- Card 1: Architecture Tenets & Guidelines -->
+        <div class="card" style="margin-bottom: 1.5rem;">
           <div class="card-header">
-            <h3 class="card-title">Global Guidelines & Architecture Tenets</h3>
-            <button class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;" onclick="AdminModule.addGuideline()">+ Add Guideline</button>
+            <div>
+              <h3 class="card-title">Global Guidelines & Architecture Tenets</h3>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.2rem;">
+                Enforce corporate policies, multi-cloud rules, security baselines, and FinOps standards across all AI evaluations.
+              </p>
+            </div>
+            <button class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="AdminModule.openAddGuidelineModal()">+ Add Guideline</button>
           </div>
           <div id="admin-guidelines-list">
             <p style="color: var(--text-secondary);">Loading corporate guidelines...</p>
           </div>
         </div>
 
-        <!-- User & RBAC Management -->
+        <!-- Card 2: Enterprise Reference Sources (Excel, PDF, Word, URL) -->
         <div class="card">
           <div class="card-header">
-            <h3 class="card-title">User Roles & Access Rights</h3>
-            <span style="font-size: 0.8rem; color: var(--text-secondary);">Admin vs Reviewer</span>
+            <div>
+              <h3 class="card-title">Corporate Reference Sources & Document Ingestion</h3>
+              <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.2rem;">
+                Configure enterprise reference documents (Excel rate cards, PDF manuals, Documentation URLs, Word policies) applied globally or targeted to specific AI Agents.
+              </p>
+            </div>
+            <button class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="AdminModule.openAddSourceModal()">+ Add Source</button>
           </div>
-          <div id="admin-users-list">
-            <p style="color: var(--text-secondary);">Loading users...</p>
+
+          <!-- Filter Controls Bar -->
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; justify-content: space-between;">
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <div>
+                <label style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 0.25rem;">Filter by Target Agent</label>
+                <select id="filter-source-agent" onchange="AdminModule.filterSources()" style="padding: 0.35rem 0.65rem; font-size: 0.82rem; background: #0f172a; color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px;">
+                  <option value="">All Targets (Global & Agents)</option>
+                  <option value="global">🌐 Global (All Agents)</option>
+                  <option value="lead_architect">🏛️ Lead Architect Agent</option>
+                  <option value="secops_compliance">🛡️ SecOps & Compliance Agent</option>
+                  <option value="finops">💰 FinOps Agent</option>
+                  <option value="synthesis_validator">⚖️ Synthesis & Validator Agent</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 0.25rem;">Filter by Type</label>
+                <select id="filter-source-type" onchange="AdminModule.filterSources()" style="padding: 0.35rem 0.65rem; font-size: 0.82rem; background: #0f172a; color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px;">
+                  <option value="">All Source Types</option>
+                  <option value="excel">📊 Excel (.xlsx, .xls)</option>
+                  <option value="pdf">📄 PDF Document (.pdf)</option>
+                  <option value="word">📝 Word Document (.docx, .doc)</option>
+                  <option value="url">🔗 Web URL / Documentation</option>
+                </select>
+              </div>
+            </div>
+            <div id="sources-counter" style="font-size: 0.82rem; color: var(--text-secondary);">
+              Loading sources...
+            </div>
+          </div>
+
+          <div id="admin-sources-list">
+            <p style="color: var(--text-secondary);">Loading corporate reference sources...</p>
           </div>
         </div>
       </div>
@@ -348,14 +1008,488 @@
 
   </main>
 
+  <!-- ========================================================================= -->
+  <!-- Modals & Overlays -->
+  <!-- ========================================================================= -->
+
+  <!-- Modal: Create New User (Admin) -->
+  <div class="modal-backdrop" id="modal-create-user">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Add New User</h3>
+        <button class="modal-close" onclick="AdminModule.closeCreateUserModal()">&times;</button>
+      </div>
+      <form onsubmit="AdminModule.submitCreateUser(event)">
+        <div class="modal-body">
+          <div id="cu-alert" class="auth-alert"></div>
+          <div class="form-group">
+            <label for="cu-name">Full Name</label>
+            <input type="text" id="cu-name" placeholder="e.g. Jane Doe">
+          </div>
+          <div class="form-group">
+            <label for="cu-email">Email Address</label>
+            <input type="email" id="cu-email" placeholder="user@company.com" required>
+          </div>
+          <div class="form-group">
+            <label for="cu-password">Initial Password</label>
+            <input type="password" id="cu-password" placeholder="Min. 8 characters with letters & digits" required>
+          </div>
+          <div class="form-group">
+            <label for="cu-role">Assigned Role</label>
+            <select id="cu-role">
+              <option value="Reviewer" selected>Reviewer (Submit & Validate Reviews)</option>
+              <option value="Admin">Administrator (Full Access & User Management)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-item">
+              <input type="checkbox" id="cu-active" checked>
+              User Account is Active
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="AdminModule.closeCreateUserModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Edit User (Admin) -->
+  <div class="modal-backdrop" id="modal-edit-user">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Edit User Profile</h3>
+        <button class="modal-close" onclick="AdminModule.closeEditUserModal()">&times;</button>
+      </div>
+      <form onsubmit="AdminModule.submitEditUser(event)">
+        <input type="hidden" id="eu-user-id">
+        <div class="modal-body">
+          <div id="eu-alert" class="auth-alert"></div>
+          <div class="form-group">
+            <label for="eu-name">Full Name</label>
+            <input type="text" id="eu-name" placeholder="Full name">
+          </div>
+          <div class="form-group">
+            <label for="eu-email">Email Address</label>
+            <input type="email" id="eu-email" required>
+          </div>
+          <div class="form-group">
+            <label for="eu-role">System Role</label>
+            <select id="eu-role">
+              <option value="Reviewer">Reviewer</option>
+              <option value="Admin">Administrator</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-item">
+              <input type="checkbox" id="eu-active">
+              User Account is Active
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="AdminModule.closeEditUserModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Reset User Password (Admin) -->
+  <div class="modal-backdrop" id="modal-reset-password">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Reset User Password</h3>
+        <button class="modal-close" onclick="AdminModule.closeResetPasswordModal()">&times;</button>
+      </div>
+      <form onsubmit="AdminModule.submitResetPassword(event)">
+        <input type="hidden" id="rp-user-id">
+        <div class="modal-body">
+          <div id="rp-alert" class="auth-alert"></div>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            Enter a new password for <strong id="rp-user-email" style="color: var(--text-primary);">user</strong>:
+          </p>
+          <div class="form-group">
+            <label for="rp-new-password">New Password</label>
+            <input type="password" id="rp-new-password" placeholder="Min. 8 chars (letters & numbers)" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="AdminModule.closeResetPasswordModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Reset Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add Architecture Guideline (Admin) -->
+  <div class="modal-backdrop" id="modal-add-guideline">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Add Architecture Guideline & Tenet</h3>
+        <button class="modal-close" onclick="AdminModule.closeAddGuidelineModal()">&times;</button>
+      </div>
+      <form onsubmit="AdminModule.submitAddGuideline(event)">
+        <div class="modal-body">
+          <div id="ag-alert" class="auth-alert"></div>
+          <div class="form-group">
+            <label for="ag-title">Guideline Title</label>
+            <input type="text" id="ag-title" placeholder="e.g. Strict Multi-Cloud Zero Trust" required>
+          </div>
+          <div class="form-group">
+            <label for="ag-category">Category</label>
+            <select id="ag-category">
+              <option value="architecture">Architecture</option>
+              <option value="security">Security & Compliance</option>
+              <option value="finops">FinOps & Cost Optimization</option>
+              <option value="reliability">Reliability & Resiliency</option>
+              <option value="general">General</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="ag-content">Guideline Rule & Architectural Specification</label>
+            <textarea id="ag-content" rows="5" placeholder="Specify corporate requirements, mandatory controls, or review rules..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-item">
+              <input type="checkbox" id="ag-active" checked>
+              Tenet is Active (enforced during AI architecture evaluations)
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="AdminModule.closeAddGuidelineModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Guideline</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Architecture Guideline (Admin) -->
+  <div class="modal-backdrop" id="modal-edit-guideline">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Edit Architecture Guideline & Tenet</h3>
+        <button class="modal-close" onclick="AdminModule.closeEditGuidelineModal()">&times;</button>
+      </div>
+      <form onsubmit="AdminModule.submitEditGuideline(event)">
+        <input type="hidden" id="eg-id">
+        <div class="modal-body">
+          <div id="eg-alert" class="auth-alert"></div>
+          <div class="form-group">
+            <label for="eg-title">Guideline Title</label>
+            <input type="text" id="eg-title" placeholder="e.g. Strict Multi-Cloud Zero Trust" required>
+          </div>
+          <div class="form-group">
+            <label for="eg-category">Category</label>
+            <select id="eg-category">
+              <option value="architecture">Architecture</option>
+              <option value="security">Security & Compliance</option>
+              <option value="finops">FinOps & Cost Optimization</option>
+              <option value="reliability">Reliability & Resiliency</option>
+              <option value="general">General</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="eg-content">Guideline Rule & Architectural Specification</label>
+            <textarea id="eg-content" rows="5" placeholder="Specify corporate requirements, mandatory controls, or review rules..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-item">
+              <input type="checkbox" id="eg-active">
+              Tenet is Active (enforced during AI architecture evaluations)
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="AdminModule.closeEditGuidelineModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add Reference Source -->
+  <div class="modal-backdrop" id="modal-add-source">
+    <div class="modal-dialog" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3>Add Reference Source / Document</h3>
+        <button class="modal-close" onclick="AdminModule.closeAddSourceModal()">&times;</button>
+      </div>
+      <form onsubmit="AdminModule.submitAddSource(event)">
+        <div class="modal-body">
+          <div id="as-alert" class="auth-alert"></div>
+          
+          <div class="form-group">
+            <label for="as-name">Source Name *</label>
+            <input type="text" id="as-name" placeholder="e.g. AWS Multi-Cloud Security Baseline v2.4" required>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div class="form-group">
+              <label for="as-type">Source Type *</label>
+              <select id="as-type" onchange="AdminModule.onSourceTypeChange('add')" required>
+                <option value="url">🔗 Web URL / Documentation Link</option>
+                <option value="excel">📊 Excel Spreadsheet (.xlsx, .xls)</option>
+                <option value="pdf">📄 PDF Document (.pdf)</option>
+                <option value="word">📝 Word Document (.docx, .doc)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="as-agent">Target AI Agent *</label>
+              <select id="as-agent" required>
+                <option value="global">🌐 Global (All Agents)</option>
+                <option value="lead_architect">🏛️ Lead Architect Agent</option>
+                <option value="secops_compliance">🛡️ SecOps & Compliance Agent</option>
+                <option value="finops">💰 FinOps Agent</option>
+                <option value="synthesis_validator">⚖️ Synthesis & Validator Agent</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- URL Input Container -->
+          <div class="form-group" id="as-url-group">
+            <label for="as-url">Documentation / Web URL *</label>
+            <input type="url" id="as-url" placeholder="https://docs.aws.amazon.com/wellarchitected/...">
+            <small style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 0.2rem; display: block;">
+              Live web URLs are fetched and indexed into agent prompts automatically.
+            </small>
+          </div>
+
+          <!-- File Upload Container -->
+          <div class="form-group" id="as-file-group" style="display: none;">
+            <label for="as-file">Upload Document File *</label>
+            <input type="file" id="as-file" accept=".xlsx,.xls,.pdf,.docx,.doc">
+            <small id="as-file-hint" style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 0.2rem; display: block;">
+              Select file to upload and extract text for agent reasoning.
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="as-description">Description & Agent Guidance</label>
+            <textarea id="as-description" rows="2" placeholder="Briefly describe what this document contains and how the target agent should apply it..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="as-extracted-text">Knowledge Snippet / Extracted Text Override</label>
+            <textarea id="as-extracted-text" rows="3" placeholder="Optional: manual knowledge snippet or override (auto-extracted from file/url if empty)"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-item">
+              <input type="checkbox" id="as-active" checked>
+              Source is Active (injected into agent evaluation context)
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="AdminModule.closeAddSourceModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="as-submit-btn">Add Source</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Reference Source -->
+  <div class="modal-backdrop" id="modal-edit-source">
+    <div class="modal-dialog" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3>Edit Reference Source / Document</h3>
+        <button class="modal-close" onclick="AdminModule.closeEditSourceModal()">&times;</button>
+      </div>
+      <form onsubmit="AdminModule.submitEditSource(event)">
+        <input type="hidden" id="es-id">
+        <div class="modal-body">
+          <div id="es-alert" class="auth-alert"></div>
+          
+          <div class="form-group">
+            <label for="es-name">Source Name *</label>
+            <input type="text" id="es-name" required>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div class="form-group">
+              <label for="es-type">Source Type *</label>
+              <select id="es-type" onchange="AdminModule.onSourceTypeChange('edit')" required>
+                <option value="url">🔗 Web URL / Documentation Link</option>
+                <option value="excel">📊 Excel Spreadsheet (.xlsx, .xls)</option>
+                <option value="pdf">📄 PDF Document (.pdf)</option>
+                <option value="word">📝 Word Document (.docx, .doc)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="es-agent">Target AI Agent *</label>
+              <select id="es-agent" required>
+                <option value="global">🌐 Global (All Agents)</option>
+                <option value="lead_architect">🏛️ Lead Architect Agent</option>
+                <option value="secops_compliance">🛡️ SecOps & Compliance Agent</option>
+                <option value="finops">💰 FinOps Agent</option>
+                <option value="synthesis_validator">⚖️ Synthesis & Validator Agent</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- URL Input Container -->
+          <div class="form-group" id="es-url-group">
+            <label for="es-url">Documentation / Web URL</label>
+            <input type="url" id="es-url">
+          </div>
+
+          <!-- File Upload Container -->
+          <div class="form-group" id="es-file-group" style="display: none;">
+            <label for="es-file">Replace Document File</label>
+            <input type="file" id="es-file" accept=".xlsx,.xls,.pdf,.docx,.doc">
+            <div id="es-current-file-info" style="font-size: 0.78rem; color: var(--accent); margin-top: 0.3rem;"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="es-description">Description & Agent Guidance</label>
+            <textarea id="es-description" rows="2"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="es-extracted-text">Knowledge Snippet / Extracted Text</label>
+            <textarea id="es-extracted-text" rows="4"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-item">
+              <input type="checkbox" id="es-active">
+              Source is Active (injected into agent evaluation context)
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="AdminModule.closeEditSourceModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="es-submit-btn">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Preview Source Knowledge -->
+  <div class="modal-backdrop" id="modal-preview-source">
+    <div class="modal-dialog" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 id="ps-title">Source Knowledge Preview</h3>
+        <button class="modal-close" onclick="AdminModule.closePreviewSourceModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="ps-badges" style="display: flex; gap: 0.5rem; margin-bottom: 0.8rem; flex-wrap: wrap;"></div>
+        <div id="ps-description-box" style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.8rem; line-height: 1.4;"></div>
+        <label style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 0.3rem;">Extracted Content / Agent Context</label>
+        <div id="ps-content" class="preview-text-box"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="AdminModule.closePreviewSourceModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Change Password (Self) -->
+  <div class="modal-backdrop" id="modal-change-password">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Change My Password</h3>
+        <button class="modal-close" onclick="AuthModule.closeChangePasswordModal()">&times;</button>
+      </div>
+      <form onsubmit="AuthModule.submitChangePassword(event)">
+        <div class="modal-body">
+          <div id="cp-alert" class="auth-alert"></div>
+          <div class="form-group">
+            <label for="cp-current-password">Current Password</label>
+            <input type="password" id="cp-current-password" placeholder="Your current password" required>
+          </div>
+          <div class="form-group">
+            <label for="cp-new-password">New Password</label>
+            <input type="password" id="cp-new-password" placeholder="Min. 8 chars with letters & digits" required>
+          </div>
+          <div class="form-group">
+            <label for="cp-confirm-password">Confirm New Password</label>
+            <input type="password" id="cp-confirm-password" placeholder="Re-enter new password" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="AuthModule.closeChangePasswordModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Authentication Overlay (Login & Registration) -->
+  <div class="auth-overlay" id="auth-overlay" style="display: none;">
+    <div class="auth-card">
+      <div class="auth-header">
+        <span class="logo-badge" style="font-size: 1.1rem; padding: 0.4rem 0.8rem;">ARB</span>
+        <h2>Architecture Review Board</h2>
+        <p>Enterprise Multi-Cloud Architecture Review System</p>
+      </div>
+
+      <div class="auth-nav">
+        <button id="auth-tab-btn-login" class="active" onclick="AuthModule.switchAuthTab('login')">Sign In</button>
+        <button id="auth-tab-btn-register" onclick="AuthModule.switchAuthTab('register')">Create Account</button>
+      </div>
+
+      <div class="auth-body">
+        <div id="auth-alert" class="auth-alert"></div>
+
+        <!-- Login Form -->
+        <form id="auth-form-login" onsubmit="AuthModule.submitLogin(event)">
+          <div class="form-group">
+            <label for="login-email">Email Address</label>
+            <input type="email" id="login-email" placeholder="name@company.com" required autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" placeholder="••••••••••••" required autocomplete="current-password">
+          </div>
+          <button type="submit" id="login-submit-btn" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-size: 0.95rem; margin-top: 0.5rem;">
+            Sign In
+          </button>
+        </form>
+
+        <!-- Registration Form -->
+        <form id="auth-form-register" style="display: none;" onsubmit="AuthModule.submitRegister(event)">
+          <div class="form-group">
+            <label for="reg-name">Full Name</label>
+            <input type="text" id="reg-name" placeholder="Alex Smith">
+          </div>
+          <div class="form-group">
+            <label for="reg-email">Work Email</label>
+            <input type="email" id="reg-email" placeholder="alex@company.com" required autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label for="reg-password">Password</label>
+            <input type="password" id="reg-password" placeholder="At least 8 characters (letters & digits)" required autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label for="reg-confirm-password">Confirm Password</label>
+            <input type="password" id="reg-confirm-password" placeholder="Re-type your password" required autocomplete="new-password">
+          </div>
+          <button type="submit" id="reg-submit-btn" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-size: 0.95rem; margin-top: 0.5rem;">
+            Create Account
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- Notification Toast -->
   <div id="toast"></div>
 
   <!-- JavaScript Modules -->
-  <script src="/static/js/app.js"></script>
-  <script src="/static/js/review.js"></script>
-  <script src="/static/js/adr_viewer.js"></script>
-  <script src="/static/js/feedback.js"></script>
-  <script src="/static/js/admin.js"></script>
+  <script src="/static/js/marked.min.js"></script>
+  <script src="/static/js/auth.js?v=9"></script>
+  <script src="/static/js/app.js?v=9"></script>
+  <script src="/static/js/review.js?v=9"></script>
+  <script src="/static/js/build.js?v=1"></script>
+  <script src="/static/js/adr_viewer.js?v=9"></script>
+  <script src="/static/js/feedback.js?v=9"></script>
+  <script src="/static/js/admin.js?v=10"></script>
 </body>
 </html>

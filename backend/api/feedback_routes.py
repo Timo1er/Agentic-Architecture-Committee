@@ -66,7 +66,10 @@ def submit_feedback(
     }
 
 @router.get("/history")
-def list_feedback_history(db: Session = Depends(get_db)):
+def list_feedback_history(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     feedbacks = db.query(HumanFeedback).order_by(HumanFeedback.created_at.desc()).all()
     results = []
     for f in feedbacks:

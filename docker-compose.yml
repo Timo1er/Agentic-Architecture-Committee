@@ -1,4 +1,4 @@
-version: "3.8"
+#version: '3.8'
 
 services:
   # ----------------------------------------------------------------------------
@@ -12,6 +12,7 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
+      - "80:8000"
     environment:
       - APP_NAME=Architecture Review Board
       - APP_ENV=production
@@ -23,6 +24,7 @@ services:
       - SECRET_KEY=prod-arb-secret-key-replace-with-secure-vault-value-32char!
       - ENCRYPTION_KEY=ARB_PROD_FERNET_KEY_32_BYTES_0000000000=
       - DEFAULT_LLM_PROVIDER=google
+      - DEFAULT_MODEL_NAME=${DEFAULT_MODEL_NAME:-gemini-3.6-flash}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
@@ -30,11 +32,15 @@ services:
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
       - AWS_REGION=${AWS_REGION:-us-east-1}
+    volumes:
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+      - ./.env:/app/.env
     depends_on:
       postgres:
         condition: service_healthy
       qdrant:
-        condition: service_healthy
+        condition: service_started
     networks:
       - arb-network
 
@@ -73,11 +79,6 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_data:/qdrant/storage
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:6333/healthz || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     networks:
       - arb-network
 

@@ -9,6 +9,7 @@ class ARBState(TypedDict):
     model_name: Optional[str]
     raw_inputs: Dict[str, Any] # diagram_parsed, terraform_parsed, services_parsed
     global_guidelines: Optional[str]
+    agent_sources: Optional[Dict[str, List[Dict[str, Any]]]]
     memory_context: Optional[str]
     
     # Agent outputs
@@ -16,6 +17,10 @@ class ARBState(TypedDict):
     secops_output: Optional[Dict[str, Any]]
     finops_output: Optional[Dict[str, Any]]
     adr_output: Optional[Dict[str, Any]]
+    
+    # Incremental ADR Identification
+    adr_number: Optional[int]
+    adr_prefix: Optional[str]
     
     # Human-In-The-Loop (HITL) & Revision Tracking
     human_feedback: Optional[Dict[str, Any]] # {rating: 4, verdict: "revision_requested", comments: "...", corrections: "..."}

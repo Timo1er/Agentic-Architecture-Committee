@@ -36,11 +36,13 @@ class User(Base):
     full_name = Column(String(255), nullable=True)
     role = Column(SQLEnum(UserRole), default=UserRole.REVIEWER, nullable=False)
     is_active = Column(Boolean, default=True)
+    last_login_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     reviews = relationship("ReviewSession", back_populates="creator")
     feedbacks = relationship("HumanFeedback", back_populates="reviewer")
+    build_sessions = relationship("BuildArchitectureSession", back_populates="creator")
 
 class SSOConfig(Base):
     __tablename__ = "sso_configs"
@@ -78,6 +80,23 @@ class GlobalInstruction(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
+class ArchitectureSource(Base):
+    __tablename__ = "architecture_sources"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    name = Column(String(255), nullable=False)
+    source_type = Column(String(50), nullable=False) # excel, pdf, word, url
+    target_agent = Column(String(50), default="global", nullable=False) # global, lead_architect, secops_compliance, finops, synthesis_validator
+    url = Column(String(1024), nullable=True)
+    filename = Column(String(255), nullable=True)
+    file_path = Column(String(1024), nullable=True)
+    file_size = Column(Integer, nullable=True)
+    description = Column(Text, nullable=True)
+    extracted_text = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
 class ReviewSession(Base):
     __tablename__ = "review_sessions"
 
@@ -101,7 +120,7 @@ class ArchitectureDecisionRecord(Base):
     id = Column(String(36), primary_key=True, default=generate_uuid)
     review_id = Column(String(36), ForeignKey("review_sessions.id"), nullable=False, unique=True)
     adr_number = Column(Integer, default=1)
-    title = Column(String(255), nullable=False)
+    title = Column(Text, nullable=False)
     status = Column(String(50), default="PROPOSED") # PROPOSED, ACCEPTED, REVISION_REQUIRED, REJECTED
     context = Column(Text, nullable=False)
     decision = Column(Text, nullable=False)
@@ -135,6 +154,38 @@ class AuditLog(Base):
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     user_id = Column(String(36), ForeignKey("users.id"), nullable=True)
+    user_email = Column(String(255), nullable=True)
     action = Column(String(100), nullable=False)
     details = Column(Text, nullable=True)
+    ip_address = Column(String(50), nullable=True)
     timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User")
+ 
+class BuildArchitectureSession(Base):
+    __tablename__ = "build_architecture_sessions"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    title = Column(String(255), nullable=False)
+    target_cloud = Column(String(50), nullable=False) # AWS, GCP, Azure, AliCloud, OVH, Multi-Cloud
+    llm_provider = Column(String(50), default="google")
+    input_modality = Column(String(50), default="text") # text, excel, pdf, word
+    input_text = Column(Text, nullable=False)
+    input_filename = Column(String(255), nullable=True)
+    workload_type = Column(String(100), default="Microservices & Web Apps")
+    high_availability = Column(String(100), default="Multi-AZ")
+    compliance = Column(String(100), default="Standard")
+    budget_tier = Column(String(100), default="Mid-Market")
+    status = Column(String(50), default="completed") # draft, generating, completed, failed
+    diagram_mermaid = Column(Text, nullable=True)
+    diagram_drawio_xml = Column(Text, nullable=True)
+    diagram_svg = Column(Text, nullable=True)
+    components_json = Column(Text, nullable=True) # JSON array of components
+    tad_json = Column(Text, nullable=True) # JSON structured TAD
+    full_tad_markdown = Column(Text, nullable=True) # Full TAD in markdown
+    total_monthly_cost_usd = Column(Float, default=0.0)
+    created_by_id = Column(String(36), ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    creator = relationship("User", back_populates="build_sessions")
